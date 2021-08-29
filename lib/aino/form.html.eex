@@ -1,0 +1,9 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <title>Aino</title>
+  </head>
+  <body>
+    <%= @params["search"] %>
+  </body>
+</html>

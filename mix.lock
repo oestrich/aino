@@ -1,0 +1,3 @@
+%{
+  "elli": {:hex, :elli, "3.3.0", "089218762a7ff3d20ae81c8e911bd0f73ee4ee0ed85454226d1fc6b4fff3b4f6", [:rebar3], [], "hexpm", "698b13b33d05661db9fe7efcba41b84825a379cce86e486cf6aff9285be0ccf8"},
+}

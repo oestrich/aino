@@ -1,0 +1,14 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <title>Aino Exception</title>
+    <link href="https://unpkg.com/tailwindcss@2.2.7/dist/tailwind.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="mx-auto max-w-prose mt-4">
+      <h1 class="text-xl m-4 text-center">Internal Server Error</h1>
+
+      <div class="whitespace-pre text-red-600"><%= @exception %></div>
+    </div>
+  </body>
+</html>
