@@ -1,9 +1,3 @@
-<!DOCTYPE>
-<html>
-  <head>
-    <title>Aino</title>
-  </head>
-  <body>
-    <%= @params["search"] %>
-  </body>
-</html>
+<div class="mx-auto max-w-prose mt-4">
+  <%= @params["search"] %>
+</div>

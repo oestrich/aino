@@ -32,7 +32,8 @@ defmodule Aino.Handler do
       &Aino.Wrappers.Development.recompile/1,
       Aino.Wrappers.common(),
       &Aino.Wrappers.routes(&1, routes),
-      &Aino.Routes.handle_route/1
+      &Aino.Routes.handle_route/1,
+      &Layout.wrap/1
     ]
 
     Aino.Token.reduce(token, wrappers)
@@ -72,6 +73,17 @@ defmodule Hello do
     |> Token.response_status(200)
     |> Token.response_header("Content-Type", "text/plain")
     |> Token.response_body("Hello #{token.default_name}!\n")
+  end
+end
+
+defmodule Layout do
+  alias Aino.Token
+
+  require EEx
+  EEx.function_from_file(:def, :render, "lib/aino/layout.html.eex", [:assigns])
+
+  def wrap(token) do
+    Token.response_body(token,  render(%{inner_content: token.response_body}))
   end
 end
 
