@@ -259,6 +259,8 @@ defmodule Aino.Routes do
   An Aino set of wrappers for dealing with routes and routing
   """
 
+  alias Aino.Token
+
   def get(path, wrappers) do
     wrappers = List.wrap(wrappers)
 
@@ -311,9 +313,9 @@ defmodule Aino.Routes do
 
       :error ->
         token
-        |> Map.put(:status, 404)
-        |> Map.put(:headers, [])
-        |> Map.put(:body, "Not found")
+        |> Token.response_status(404)
+        |> Token.response_header("Content-Type", "text/plain")
+        |> Token.response_body("Not found")
     end
   end
 
