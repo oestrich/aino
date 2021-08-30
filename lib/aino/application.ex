@@ -3,7 +3,7 @@ defmodule Aino.Application do
 
   def start(_type, _args) do
     children = [
-      {Aino, [callback: Aino, callback_args: Aino.Handler, port: 3000]}
+      {Aino, [callback: Aino.Handler, port: 3000]}
     ]
 
     opts = [strategy: :one_for_one, name: Aino.Supervisor]

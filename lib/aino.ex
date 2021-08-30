@@ -32,6 +32,12 @@ defmodule Aino do
   require Logger
 
   def child_spec(opts) do
+    opts = [
+      callback: Aino,
+      callback_args: opts[:callback],
+      port: opts[:port]
+    ]
+
     %{
       id: __MODULE__,
       start: {:elli, :start_link, [opts]},
