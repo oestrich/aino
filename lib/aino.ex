@@ -198,6 +198,9 @@ defmodule Aino.Wrappers do
         case content_type do
           "application/x-www-form-urlencoded" ->
             parse_form_urlencoded(token)
+
+          "application/json" ->
+            parse_json(token)
         end
 
       _ ->
@@ -218,6 +221,16 @@ defmodule Aino.Wrappers do
       |> Enum.into(%{})
 
     Map.put(token, :parsed_body, parsed_body)
+  end
+
+  defp parse_json(token) do
+    case Jason.decode(token.request.body) do
+      {:ok, json} ->
+        Map.put(token, :parsed_body, json)
+
+      :error ->
+        token
+    end
   end
 
   def routes(token, routes) do

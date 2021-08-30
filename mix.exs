@@ -23,7 +23,8 @@ defmodule Aino.MixProject do
   defp deps do
     [
       {:credo, "~> 1.5", only: [:dev]},
-      {:elli, "~> 3.3"}
+      {:elli, "~> 3.3"},
+      {:jason, "~> 1.2"}
     ]
   end
 end
