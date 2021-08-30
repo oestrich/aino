@@ -1,4 +1,6 @@
 defmodule Aino.Application do
+  @moduledoc false
+
   use Application
 
   def start(_type, _args) do
@@ -12,6 +14,8 @@ defmodule Aino.Application do
 end
 
 defmodule Aino.Handler do
+  @moduledoc false
+
   import Aino.Routes, only: [get: 2, post: 2]
 
   def handle(token) do
@@ -36,6 +40,8 @@ defmodule Aino.Handler do
 end
 
 defmodule Error do
+  @moduledoc false
+
   def fail(_token) do
     raise "Oh no"
   end
@@ -46,6 +52,8 @@ defmodule Error do
 end
 
 defmodule Hello do
+  @moduledoc false
+
   alias Aino.Token
 
   def default_name(token) do
@@ -68,6 +76,8 @@ defmodule Hello do
 end
 
 defmodule Index do
+  @moduledoc false
+
   alias Aino.Token
 
   require EEx
@@ -90,6 +100,8 @@ defmodule Index do
 end
 
 defmodule Form do
+  @moduledoc false
+
   alias Aino.Token
 
   require EEx

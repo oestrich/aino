@@ -1,8 +1,13 @@
 defmodule Aino do
+  @moduledoc """
+  Aino, an experimental HTTP framework
+  """
+
   @behaviour :elli_handler
 
   require Logger
 
+  @doc false
   def child_spec(opts) do
     opts = [
       callback: Aino,
@@ -76,6 +81,13 @@ defmodule Aino do
 end
 
 defmodule Aino.Token do
+  @moduledoc """
+  The token is what flows through the entire web request
+
+  This module contains helper functions for dealing with the token, setting
+  common fields for responses or looking up request fields.
+  """
+
   def from_request(request) do
     %{request: request}
   end
@@ -121,11 +133,22 @@ defmodule Aino.Token do
 end
 
 defmodule Aino.Exception do
+  @moduledoc false
+
+  # Compiles the error page into a function for calling in `Aino`
+
   require EEx
   EEx.function_from_file(:def, :render, "lib/aino/exception.html.eex", [:assigns])
 end
 
 defmodule Aino.Wrappers do
+  @moduledoc """
+  Wrappers are middleware functions
+
+  Included in Aino are common functions that deal with requests, such
+  as parsing the POST body for form data or parsing query/path params.
+  """
+
   alias Aino.Token
 
   def common() do
@@ -174,23 +197,27 @@ defmodule Aino.Wrappers do
 
         case content_type do
           "application/x-www-form-urlencoded" ->
-            parsed_body =
-              token.request.body
-              |> String.split("&")
-              |> Enum.map(fn token ->
-                case String.split(token, "=") do
-                  [token] -> {token, true}
-                  [name, value] -> {name, URI.decode_www_form(value)}
-                end
-              end)
-              |> Enum.into(%{})
-
-            Map.put(token, :parsed_body, parsed_body)
+            parse_form_urlencoded(token)
         end
 
       _ ->
         token
     end
+  end
+
+  defp parse_form_urlencoded(token) do
+    parsed_body =
+      token.request.body
+      |> String.split("&")
+      |> Enum.map(fn token ->
+        case String.split(token, "=") do
+          [token] -> {token, true}
+          [name, value] -> {name, URI.decode_www_form(value)}
+        end
+      end)
+      |> Enum.into(%{})
+
+    Map.put(token, :parsed_body, parsed_body)
   end
 
   def routes(token, routes) do
@@ -199,6 +226,12 @@ defmodule Aino.Wrappers do
 end
 
 defmodule Aino.Wrappers.Development do
+  @moduledoc """
+  Development only wrappers
+
+  These should *not* be used in production.
+  """
+
   require Logger
 
   def recompile(token) do
@@ -209,6 +242,10 @@ defmodule Aino.Wrappers.Development do
 end
 
 defmodule Aino.Routes do
+  @moduledoc """
+  An Aino set of wrappers for dealing with routes and routing
+  """
+
   def get(path, wrappers) do
     wrappers = List.wrap(wrappers)
 
@@ -267,6 +304,7 @@ defmodule Aino.Routes do
     end
   end
 
+  @doc false
   def find_route([route = %{method: method} | routes], method, path) do
     case check_path(path, route.path) do
       {:ok, path_params} ->
@@ -283,6 +321,7 @@ defmodule Aino.Routes do
 
   def find_route([], _method, _path), do: :error
 
+  @doc false
   def check_path(path, route_path, params \\ %{})
 
   def check_path([], [], params), do: {:ok, params}
@@ -300,6 +339,10 @@ defmodule Aino.Routes do
 end
 
 defmodule Aino.Request do
+  @moduledoc false
+
+  # Convert an `:elli` request record into a struct that we can work with easily
+
   record = Record.extract(:req, from_lib: "elli/include/elli.hrl")
   keys = :lists.map(&elem(&1, 0), record)
   vals = :lists.map(&{&1, [], nil}, keys)

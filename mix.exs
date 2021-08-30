@@ -22,6 +22,7 @@ defmodule Aino.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:credo, "~> 1.5", only: [:dev]},
       {:elli, "~> 3.3"}
     ]
   end
