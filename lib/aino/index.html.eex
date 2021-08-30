@@ -6,7 +6,7 @@
   </head>
   <body>
     <div class="mx-auto max-w-prose mt-4">
-      <h1 class="text-xl m-4 text-center">Welcome to Aino</h1>
+      <h1 class="text-xl m-4 text-center"><a href="/">Welcome to Aino</a></h1>
 
       <a class="text-blue-500 underline" href="/error">Error Page</a>
 

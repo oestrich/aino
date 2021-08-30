@@ -1,31 +1,3 @@
-defmodule Aino.Token do
-  def from_request(request) do
-    %{request: request}
-  end
-
-  def reduce(token, wrappers) do
-    Enum.reduce(wrappers, token, fn
-      wrappers, token when is_list(wrappers) ->
-        reduce(token, wrappers)
-
-      wrapper, token ->
-        wrapper.(token)
-    end)
-  end
-
-  def request_header(token, request_header) do
-    request_header = String.downcase(request_header)
-
-    token.headers
-    |> Enum.filter(fn {header, _value} ->
-      request_header == header
-    end)
-    |> Enum.map(fn {_header, value} ->
-      value
-    end)
-  end
-end
-
 defmodule Aino do
   @behaviour :elli_handler
 
@@ -50,14 +22,11 @@ defmodule Aino do
   @impl true
   def handle(request, callback) do
     try do
-      response =
-        request
-        |> Aino.Request.from_record()
-        |> Aino.Token.from_request()
-        |> callback.handle()
-
-      {response.status, response.headers, response.body}
-
+      request
+      |> Aino.Request.from_record()
+      |> Aino.Token.from_request()
+      |> callback.handle()
+      |> handle_response()
     rescue
       exception ->
         Logger.error(Exception.format(:error, exception, __STACKTRACE__))
@@ -67,6 +36,20 @@ defmodule Aino do
         }
 
         {500, [{"Content-Type", "text/html"}], Aino.Exception.render(assigns)}
+    end
+  end
+
+  defp handle_response(token) do
+    required_keys = [:response_status, :response_headers, :response_body]
+
+    case Enum.all?(required_keys, fn key -> Map.has_key?(token, key) end) do
+      true ->
+        {token.response_status, token.response_headers, token.response_body}
+
+      false ->
+        missing_keys = required_keys -- Map.keys(token)
+
+        raise "Token is missing required keys - #{inspect(missing_keys)}"
     end
   end
 
@@ -92,6 +75,51 @@ defmodule Aino do
   end
 end
 
+defmodule Aino.Token do
+  def from_request(request) do
+    %{request: request}
+  end
+
+  def response_status(token, status) do
+    Map.put(token, :response_status, status)
+  end
+
+  def response_header(token, key, value) do
+    response_headers = Map.get(token, :response_headers, [])
+    Map.put(token, :response_headers, response_headers ++ [{key, value}])
+  end
+
+  def response_headers(token, headers) do
+    Map.put(token, :response_headers, headers)
+  end
+
+  def response_body(token, body) do
+    Map.put(token, :response_body, body)
+  end
+
+  def reduce(token, wrappers) do
+    Enum.reduce(wrappers, token, fn
+      wrappers, token when is_list(wrappers) ->
+        reduce(token, wrappers)
+
+      wrapper, token ->
+        wrapper.(token)
+    end)
+  end
+
+  def request_header(token, request_header) do
+    request_header = String.downcase(request_header)
+
+    token.headers
+    |> Enum.filter(fn {header, _value} ->
+      request_header == header
+    end)
+    |> Enum.map(fn {_header, value} ->
+      value
+    end)
+  end
+end
+
 defmodule Aino.Exception do
   require EEx
   EEx.function_from_file(:def, :render, "lib/aino/exception.html.eex", [:assigns])
@@ -106,7 +134,7 @@ defmodule Aino.Wrappers do
       &path/1,
       &params/1,
       &headers/1,
-      &request_body/1,
+      &request_body/1
     ]
   end
 
