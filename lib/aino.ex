@@ -163,7 +163,8 @@ defmodule Aino.Wrappers do
       &path/1,
       &params/1,
       &headers/1,
-      &request_body/1
+      &request_body/1,
+      &cookies/1
     ]
   end
 
@@ -179,7 +180,6 @@ defmodule Aino.Wrappers do
   def cookies(token) do
     case Token.request_header(token, "cookie") do
       [cookies] ->
-
         cookies =
           cookies
           |> String.split(";")
@@ -262,13 +262,9 @@ defmodule Aino.Wrappers do
         token
     end
   end
-
-  def routes(token, routes) do
-    Map.put(token, :routes, routes)
-  end
 end
 
-defmodule Aino.Session.Wrapper do
+defmodule Aino.Session do
   @moduledoc """
   Session storage
   """
@@ -287,19 +283,23 @@ defmodule Aino.Session.Wrapper do
 
         case expected_signature == signature do
           true ->
-            case Jason.decode(data) do
-              {:ok, session} ->
-                Map.put(token, :session, session)
-
-              :error ->
-                Map.put(token, :session, %{})
-            end
+            parse_session(token, data)
 
           false ->
             Map.put(token, :session, %{})
         end
 
       _ ->
+        Map.put(token, :session, %{})
+    end
+  end
+
+  defp parse_session(token, data) do
+    case Jason.decode(data) do
+      {:ok, session} ->
+        Map.put(token, :session, session)
+
+      :error ->
         Map.put(token, :session, %{})
     end
   end
@@ -348,7 +348,7 @@ defmodule Aino.Session.Token do
     raise """
     Make sure to parse session data before trying to put values in it
 
-    See `Aino.Session.Wrapper.parse/1`
+    See `Aino.Session.parse/1`
     """
   end
 end
@@ -423,6 +423,10 @@ defmodule Aino.Routes do
       path: path,
       wrappers: wrappers
     }
+  end
+
+  def routes(token, routes) do
+    Map.put(token, :routes, routes)
   end
 
   def handle_route(token) do
