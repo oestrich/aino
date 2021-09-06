@@ -1,3 +1,0 @@
-<div class="mx-auto max-w-prose mt-4">
-  <%= @params["search"] %>
-</div>
