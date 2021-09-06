@@ -161,8 +161,8 @@ defmodule Aino.Wrappers do
     [
       &method/1,
       &path/1,
-      &params/1,
       &headers/1,
+      &query_params/1,
       &request_body/1,
       &cookies/1
     ]
@@ -214,7 +214,7 @@ defmodule Aino.Wrappers do
     Map.put(token, :path, request.path)
   end
 
-  def params(%{request: request} = token) do
+  def query_params(%{request: request} = token) do
     params = Enum.into(request.args, %{})
 
     Map.put(token, :query_params, params)
@@ -261,6 +261,42 @@ defmodule Aino.Wrappers do
       :error ->
         token
     end
+  end
+
+  @doc """
+  Merge params into a single map
+
+  Merges in the following order:
+  - Path params
+  - Query params
+  - POST body
+  """
+  def params(token) do
+    param_providers = [
+      token[:path_params],
+      token[:query_params],
+      token[:parsed_body]
+    ]
+
+    params =
+      Enum.reduce(param_providers, %{}, fn provider, params ->
+        case is_map(provider) do
+          true ->
+            provider = stringify_keys(provider)
+            Map.merge(params, provider)
+
+          false ->
+            params
+        end
+      end)
+
+    Map.put(token, :params, params)
+  end
+
+  defp stringify_keys(map) do
+    Enum.into(map, %{}, fn {key, value} ->
+      {to_string(key), value}
+    end)
   end
 end
 
@@ -429,11 +465,12 @@ defmodule Aino.Routes do
     Map.put(token, :routes, routes)
   end
 
-  def handle_route(token) do
+  def match_route(token) do
     case find_route(token.routes, token.method, token.path) do
       {:ok, %{wrappers: wrappers}, path_params} ->
-        token = Map.put(token, :path_params, path_params)
-        Aino.Token.reduce(token, wrappers)
+        token
+        |> Map.put(:path_params, path_params)
+        |> Map.put(:wrappers, wrappers)
 
       :error ->
         token
@@ -442,6 +479,12 @@ defmodule Aino.Routes do
         |> Token.response_body("Not found")
     end
   end
+
+  def handle_route(%{wrappers: wrappers} = token) do
+    Aino.Token.reduce(token, wrappers)
+  end
+
+  def handle_route(token), do: token
 
   @doc false
   def find_route([route = %{method: method} | routes], method, path) do
