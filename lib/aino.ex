@@ -75,6 +75,12 @@ defmodule Aino do
     :ok
   end
 
+  def handle_event(:elli_startup, _data, _args) do
+    Logger.info("Aino started")
+
+    :ok
+  end
+
   def handle_event(_event, _data, _args) do
     :ok
   end
@@ -170,6 +176,30 @@ defmodule Aino.Wrappers do
     Map.put(token, :headers, headers)
   end
 
+  def cookies(token) do
+    case Token.request_header(token, "cookie") do
+      [cookies] ->
+
+        cookies =
+          cookies
+          |> String.split(";")
+          |> Enum.map(fn cookie ->
+            [variable | cookie] =
+              cookie
+              |> String.split("=")
+              |> Enum.map(&String.trim/1)
+
+            {variable, Enum.join(cookie, "=")}
+          end)
+          |> Enum.into(%{})
+
+        Map.put(token, :cookies, cookies)
+
+      [] ->
+        Map.put(token, :cookies, %{})
+    end
+  end
+
   def method(%{request: request} = token) do
     method =
       request.method
@@ -238,6 +268,91 @@ defmodule Aino.Wrappers do
   end
 end
 
+defmodule Aino.Session.Wrapper do
+  @moduledoc """
+  Session storage
+  """
+
+  alias Aino.Token
+
+  def salt(token, value) do
+    Map.put(token, :session_salt, value)
+  end
+
+  def parse(token) do
+    case token.cookies["_aino_session"] do
+      data when is_binary(data) ->
+        expected_signature = token.cookies["_aino_session_signature"]
+        signature = Base.encode64(:crypto.mac(:hmac, :sha256, token.session_salt, data))
+
+        case expected_signature == signature do
+          true ->
+            case Jason.decode(data) do
+              {:ok, session} ->
+                Map.put(token, :session, session)
+
+              :error ->
+                Map.put(token, :session, %{})
+            end
+
+          false ->
+            Map.put(token, :session, %{})
+        end
+
+      _ ->
+        Map.put(token, :session, %{})
+    end
+  end
+
+  def set(%{session_updated: true} = token) do
+    case is_map(token.session) do
+      true ->
+        session = Map.put(token.session, "t", DateTime.utc_now())
+
+        case Jason.encode(session) do
+          {:ok, data} ->
+            signature = Base.encode64(:crypto.mac(:hmac, :sha256, token.session_salt, data))
+
+            token
+            |> Token.response_header("Set-Cookie", "_aino_session=#{data}")
+            |> Token.response_header("Set-Cookie", "_aino_session_signature=#{signature}")
+
+          :error ->
+            token
+        end
+
+      false ->
+        token
+    end
+  end
+
+  def set(token), do: token
+end
+
+defmodule Aino.Session.Token do
+  @moduledoc """
+  Token functions related only to session
+
+  Session data _must_ be parsed before using these functions
+  """
+
+  def put(%{session: session} = token, key, value) do
+    session = Map.put(session, key, value)
+
+    token
+    |> Map.put(:session, session)
+    |> Map.put(:session_updated, true)
+  end
+
+  def put(_token, _key, _value) do
+    raise """
+    Make sure to parse session data before trying to put values in it
+
+    See `Aino.Session.Wrapper.parse/1`
+    """
+  end
+end
+
 defmodule Aino.Wrappers.Development do
   @moduledoc """
   Development only wrappers
@@ -250,6 +365,11 @@ defmodule Aino.Wrappers.Development do
   def recompile(token) do
     IEx.Helpers.recompile()
 
+    token
+  end
+
+  def inspect(token, key) do
+    Logger.debug(inspect(token[key]))
     token
   end
 end
@@ -314,7 +434,7 @@ defmodule Aino.Routes do
       :error ->
         token
         |> Token.response_status(404)
-        |> Token.response_header("Content-Type", "text/plain")
+        |> Token.response_header("Content-Type", "text/html")
         |> Token.response_body("Not found")
     end
   end
