@@ -138,6 +138,30 @@ defmodule Aino.Token do
   end
 end
 
+defmodule Aino.Token.Response do
+  @moduledoc """
+  Shortcuts for returning common responses
+
+  HTML, redirecting, etc
+  """
+
+  alias Aino.Token
+
+  def redirect(token, url) do
+    token
+    |> Token.response_status(302)
+    |> Token.response_header("Content-Type", "text/html")
+    |> Token.response_header("Location", url)
+    |> Token.response_body("Redirecting...")
+  end
+
+  def html(token, html) do
+    token
+    |> Token.response_header("Content-Type", "text/html")
+    |> Token.response_body(html)
+  end
+end
+
 defmodule Aino.Exception do
   @moduledoc false
 
@@ -559,9 +583,16 @@ defmodule Aino.View do
   """
 
   defmacro compile(files) when is_list(files) do
-    Enum.map(files, fn file ->
-      Aino.View.compile_template(file)
-    end)
+    templates =
+      Enum.map(files, fn file ->
+        Aino.View.compile_template(file)
+      end)
+
+    quote do
+      def render(filename, assigns \\ %{})
+
+      unquote(templates)
+    end
   end
 
   def compile_template(file) do
@@ -573,6 +604,8 @@ defmodule Aino.View do
 
       compiled = EEx.compile_file(file, [])
 
+      @file file
+      @external_resource file
       def render(unquote(filename), var!(assigns)) do
         _ = var!(assigns)
         unquote(compiled)
