@@ -55,14 +55,19 @@ The route wrappers take a token and generally should return the three keys requi
 defmodule Index do
   alias Aino.Token
 
-  require EEx
-  EEx.function_from_file(:def, :render, "lib/index/index.html.eex", [])
-
   def index(token) do
     token
     |> Token.response_status(200)
     |> Token.response_header("Content-Type", "text/html")
-    |> Token.response_body(render())
+    |> Token.response_body(Index.View.render("index.html"))
   end
+end
+
+defmodule Index.View do
+  require Aino.View
+  
+  Aino.View.compile [
+    "lib/index/index.html.eex"
+  ]
 end
 ```
