@@ -41,10 +41,10 @@ defmodule Aino.Routes do
   @type path() :: [String.t() | atom()]
 
   @type route() :: %{
-    method: method(),
-    path: path(),
-    wrappers: Wrappers.wrappers()
-  }
+          method: method(),
+          path: path(),
+          wrappers: Wrappers.wrappers()
+        }
 
   @doc """
   Create a GET route
