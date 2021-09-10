@@ -91,6 +91,12 @@ defmodule Aino.Wrappers do
   Stores the request method on the token
 
   Downcases and converts to an atom on the key `:method`
+
+      iex> request = %Aino.Request{method: :GET}
+      iex> token = %{request: request}
+      iex> token = Wrappers.method(token)
+      iex> token.method
+      :get
   """
   @spec method(Token.t()) :: Token.t()
   def method(%{request: request} = token) do
@@ -105,6 +111,12 @@ defmodule Aino.Wrappers do
 
   @doc """
   Stores the request path on the token on the key `:path`
+
+      iex> request = %Aino.Request{path: ["orders", "10"]}
+      iex> token = %{request: request}
+      iex> token = Wrappers.path(token)
+      iex> token.path
+      ["orders", "10"]
   """
   @spec path(Token.t()) :: Token.t()
   def path(%{request: request} = token) do
@@ -115,6 +127,12 @@ defmodule Aino.Wrappers do
   Stores query parameters on the token
 
   Converts map and stores on the key `:query_params`
+
+      iex> request = %Aino.Request{args: [{"key", "value"}]}
+      iex> token = %{request: request}
+      iex> token = Wrappers.query_params(token)
+      iex> token.query_params
+      %{"key" => "value"}
   """
   @spec query_params(Token.t()) :: Token.t()
   def query_params(%{request: request} = token) do
