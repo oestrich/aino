@@ -5,10 +5,29 @@ defmodule Aino.Session do
 
   alias Aino.Token
 
+  @doc """
+  Put a session signature salt into the token
+
+  Used for signing and verifying session data was not modified on
+  the client end before parsing the session.
+
+  Adds the following keys to the token `[:session_salt]`
+  """
+  @spec salt(Token.t(), String.t()) :: String.t()
   def salt(token, value) do
     Map.put(token, :session_salt, value)
   end
 
+  @doc """
+  Parse session data from cookies
+
+  Verifies the signature and if valid, parses session JSON data.
+
+  Can only be used with `Aino.Wrappers.cookies/1` and `Aino.Session.salt/2` having run before.
+
+  Adds the following keys to the token `[:session]`
+  """
+  @spec parse(Token.t()) :: Token.t()
   def parse(token) do
     case token.cookies["_aino_session"] do
       data when is_binary(data) ->
@@ -38,6 +57,15 @@ defmodule Aino.Session do
     end
   end
 
+  @doc """
+  Set session cookie data
+
+  Response will be returned with two new `Set-Cookie` headers, a signature
+  of the session data and the session data itself as JSON.
+
+  Can only be used with `Aino.Wrappers.cookies/1` and `Aino.Session.salt/2` having run before.
+  """
+  @spec set(Token.t()) :: Token.t()
   def set(%{session_updated: true} = token) do
     case is_map(token.session) do
       true ->
@@ -70,6 +98,14 @@ defmodule Aino.Session.Token do
   Session data _must_ be parsed before using these functions
   """
 
+  @doc """
+  Puts a new key/value session data
+
+  These values are serialized and sent to the client in a cookie, they
+  _must_ be JSON serializable.
+
+  Session data _must_ be parsed before using putting a new key
+  """
   def put(%{session: session} = token, key, value) do
     session = Map.put(session, key, value)
 

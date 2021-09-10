@@ -8,6 +8,28 @@ defmodule Aino.Wrappers do
 
   alias Aino.Token
 
+  @typedoc """
+  A list of wrappers
+  """
+  @type wrappers() :: [wrapper() | [wrapper()]]
+
+  @typedoc """
+  A function that takes a token and returns a token
+  """
+  @type wrapper() :: (Token.t() -> Token.t())
+
+  @doc """
+  Common wrappers that process low level request data
+
+  Processes the request:
+  - method
+  - path
+  - headers
+  - query parameters
+  - parses response body
+  - parses cookies
+  """
+  @spec common() :: wrappers()
   def common() do
     [
       &method/1,
@@ -19,6 +41,12 @@ defmodule Aino.Wrappers do
     ]
   end
 
+  @doc """
+  Processes request headers
+
+  Downcases all of the headers and stores in the key `:headers`
+  """
+  @spec headers(Token.t()) :: Token.t()
   def headers(%{request: request} = token) do
     headers =
       Enum.map(request.headers, fn {header, value} ->
@@ -28,6 +56,14 @@ defmodule Aino.Wrappers do
     Map.put(token, :headers, headers)
   end
 
+  @doc """
+  Processes the `Cookie` request header
+
+  Defaults to an empty map if no `Cookie` header is present.
+
+  Stores cookies as a map in the key `:cookies`
+  """
+  @spec cookies(Token.t()) :: Token.t()
   def cookies(token) do
     case Token.request_header(token, "cookie") do
       [cookies] ->
@@ -51,6 +87,12 @@ defmodule Aino.Wrappers do
     end
   end
 
+  @doc """
+  Stores the request method on the token
+
+  Downcases and converts to an atom on the key `:method`
+  """
+  @spec method(Token.t()) :: Token.t()
   def method(%{request: request} = token) do
     method =
       request.method
@@ -61,16 +103,36 @@ defmodule Aino.Wrappers do
     Map.put(token, :method, method)
   end
 
+  @doc """
+  Stores the request path on the token on the key `:path`
+  """
+  @spec path(Token.t()) :: Token.t()
   def path(%{request: request} = token) do
     Map.put(token, :path, request.path)
   end
 
+  @doc """
+  Stores query parameters on the token
+
+  Converts map and stores on the key `:query_params`
+  """
+  @spec query_params(Token.t()) :: Token.t()
   def query_params(%{request: request} = token) do
     params = Enum.into(request.args, %{})
 
     Map.put(token, :query_params, params)
   end
 
+  @doc """
+  Processes the request body
+
+  Only if the request should have a body (e.g. POST requests)
+
+  Handles the following content types:
+  - `application/x-www-form-urlencoded`
+  - `application/json`
+  """
+  @spec request_body(Token.t()) :: Token.t()
   def request_body(token) do
     case token.method do
       :post ->
@@ -122,6 +184,7 @@ defmodule Aino.Wrappers do
   - Query params
   - POST body
   """
+  @spec params(Token.t()) :: Token.t()
   def params(token) do
     param_providers = [
       token[:path_params],
@@ -160,12 +223,20 @@ defmodule Aino.Wrappers.Development do
 
   require Logger
 
+  @doc """
+  Recompiles the application
+  """
+  @spec recompile(Token.t()) :: Token.t()
   def recompile(token) do
     IEx.Helpers.recompile()
 
     token
   end
 
+  @doc """
+  Debug log a key on the token
+  """
+  @spec inspect(Token.t(), atom()) :: Token.t()
   def inspect(token, key) do
     Logger.debug(inspect(token[key]))
     token

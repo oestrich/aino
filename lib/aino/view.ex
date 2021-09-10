@@ -17,6 +17,9 @@ defmodule Aino.View do
   ```
   """
 
+  @doc """
+  Compile a list of templates into render functions
+  """
   defmacro compile(files) when is_list(files) do
     templates =
       Enum.map(files, fn file ->
@@ -30,6 +33,18 @@ defmodule Aino.View do
     end
   end
 
+  @doc """
+  Compile an individual file into a quoted render function
+
+  For example, `lib/app/templates/index.html.eex` would
+  generate the following:
+
+  ```elixir
+  def render("index.html", assigns) do
+    # compiled index.html.eex
+  end
+  ```
+  """
   def compile_template(file) do
     filename = Path.basename(file)
     filename = String.replace(filename, ~r/\.eex$/, "")
