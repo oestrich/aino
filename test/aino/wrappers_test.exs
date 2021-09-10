@@ -1,5 +1,5 @@
 defmodule Aino.WrappersTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Aino.Wrappers
 
