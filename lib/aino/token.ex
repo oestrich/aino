@@ -5,7 +5,7 @@ defmodule Aino.Token do
   This module contains helper functions for dealing with the token, setting
   common fields for responses or looking up request fields.
 
-  At the end of a wrapper, the token _must_ contain three keys:
+  At the end of a middleware chain, the token _must_ contain three keys:
 
   - `:response_status`
   - `:response_headers`
@@ -13,11 +13,6 @@ defmodule Aino.Token do
 
   These keys are used for generating the request's response.
   """
-
-  @typedoc """
-  A token is simply a map
-  """
-  @type t() :: map()
 
   @doc """
   Start a token from an `:elli` request
@@ -74,39 +69,39 @@ defmodule Aino.Token do
   end
 
   @doc """
-  Reduce a token over a set of wrappers.
+  Reduce a token over a set of middleware.
 
-  Takes a list of wrappers, that may be either another list of wrappers or
+  Takes a list of middleware, that may be either another list of middleware or
   a function that has an arity of 1.
 
   For example
 
   ```elixir
-  wrappers = [
-    Aino.Wrappers.common(),
+  middleware = [
+    Aino.Middleware.common(),
     &Aino.Routes.routes(&1, routes),
     &Aino.Routes.match_route/1,
-    &Aino.Wrappers.params/1,
+    &Aino.Middleware.params/1,
     &Aino.Routes.handle_route/1,
   ]
 
-  reduce(token, wrappers)
+  reduce(token, middleware)
   ```
   """
-  def reduce(token, wrappers) do
-    Enum.reduce(wrappers, token, fn
-      wrappers, token when is_list(wrappers) ->
-        reduce(token, wrappers)
+  def reduce(token, middleware) do
+    Enum.reduce(middleware, token, fn
+      middleware, token when is_list(middleware) ->
+        reduce(token, middleware)
 
-      wrapper, token ->
-        wrapper.(token)
+      middleware, token ->
+        middleware.(token)
     end)
   end
 
   @doc """
   Get a response header from the token
 
-  This must be used with `Aino.Wrappers.headers/1` since that wrapper sets
+  This must be used with `Aino.Middleware.headers/1` since that middleware sets
   up the token to include a `:headers` key that is downcased.
 
   The request header that is searched for is lower cased and compared against
@@ -147,7 +142,6 @@ defmodule Aino.Token.Response do
   `html`
   ```
   """
-  @spec html(Token.t(), String.t()) :: Token.t()
   def html(token, html) do
     token
     |> Token.response_header("Content-Type", "text/html")
@@ -170,7 +164,6 @@ defmodule Aino.Token.Response do
   Redirecting...
   ```
   """
-  @spec redirect(Token.t(), String.t()) :: Token.t()
   def redirect(token, url) do
     token
     |> Token.response_status(302)

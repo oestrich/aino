@@ -1,6 +1,6 @@
-defmodule Aino.Wrappers do
+defmodule Aino.Middleware do
   @moduledoc """
-  Wrappers are middleware functions
+  Middleware functions for processing a request into a response
 
   Included in Aino are common functions that deal with requests, such
   as parsing the POST body for form data or parsing query/path params.
@@ -8,18 +8,8 @@ defmodule Aino.Wrappers do
 
   alias Aino.Token
 
-  @typedoc """
-  A list of wrappers
-  """
-  @type wrappers() :: [wrapper() | [wrapper()]]
-
-  @typedoc """
-  A function that takes a token and returns a token
-  """
-  @type wrapper() :: (Token.t() -> Token.t())
-
   @doc """
-  Common wrappers that process low level request data
+  Common middleware that process low level request data
 
   Processes the request:
   - method
@@ -29,7 +19,6 @@ defmodule Aino.Wrappers do
   - parses response body
   - parses cookies
   """
-  @spec common() :: wrappers()
   def common() do
     [
       &method/1,
@@ -46,7 +35,6 @@ defmodule Aino.Wrappers do
 
   Downcases all of the headers and stores in the key `:headers`
   """
-  @spec headers(Token.t()) :: Token.t()
   def headers(%{request: request} = token) do
     headers =
       Enum.map(request.headers, fn {header, value} ->
@@ -63,7 +51,6 @@ defmodule Aino.Wrappers do
 
   Stores cookies as a map in the key `:cookies`
   """
-  @spec cookies(Token.t()) :: Token.t()
   def cookies(token) do
     case Token.request_header(token, "cookie") do
       [cookies] ->
@@ -94,11 +81,10 @@ defmodule Aino.Wrappers do
 
       iex> request = %Aino.Request{method: :GET}
       iex> token = %{request: request}
-      iex> token = Wrappers.method(token)
+      iex> token = Middleware.method(token)
       iex> token.method
       :get
   """
-  @spec method(Token.t()) :: Token.t()
   def method(%{request: request} = token) do
     method =
       request.method
@@ -114,11 +100,10 @@ defmodule Aino.Wrappers do
 
       iex> request = %Aino.Request{path: ["orders", "10"]}
       iex> token = %{request: request}
-      iex> token = Wrappers.path(token)
+      iex> token = Middleware.path(token)
       iex> token.path
       ["orders", "10"]
   """
-  @spec path(Token.t()) :: Token.t()
   def path(%{request: request} = token) do
     Map.put(token, :path, request.path)
   end
@@ -130,11 +115,10 @@ defmodule Aino.Wrappers do
 
       iex> request = %Aino.Request{args: [{"key", "value"}]}
       iex> token = %{request: request}
-      iex> token = Wrappers.query_params(token)
+      iex> token = Middleware.query_params(token)
       iex> token.query_params
       %{"key" => "value"}
   """
-  @spec query_params(Token.t()) :: Token.t()
   def query_params(%{request: request} = token) do
     params = Enum.into(request.args, %{})
 
@@ -150,7 +134,6 @@ defmodule Aino.Wrappers do
   - `application/x-www-form-urlencoded`
   - `application/json`
   """
-  @spec request_body(Token.t()) :: Token.t()
   def request_body(token) do
     case token.method do
       :post ->
@@ -202,7 +185,6 @@ defmodule Aino.Wrappers do
   - Query params
   - POST body
   """
-  @spec params(Token.t()) :: Token.t()
   def params(token) do
     param_providers = [
       token[:path_params],
@@ -232,9 +214,9 @@ defmodule Aino.Wrappers do
   end
 end
 
-defmodule Aino.Wrappers.Development do
+defmodule Aino.Middleware.Development do
   @moduledoc """
-  Development only wrappers
+  Development only middleware
 
   These should *not* be used in production.
   """
@@ -244,7 +226,6 @@ defmodule Aino.Wrappers.Development do
   @doc """
   Recompiles the application
   """
-  @spec recompile(Token.t()) :: Token.t()
   def recompile(token) do
     IEx.Helpers.recompile()
 
@@ -254,7 +235,6 @@ defmodule Aino.Wrappers.Development do
   @doc """
   Debug log a key on the token
   """
-  @spec inspect(Token.t(), atom()) :: Token.t()
   def inspect(token, key) do
     Logger.debug(inspect(token[key]))
     token

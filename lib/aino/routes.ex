@@ -1,10 +1,10 @@
 defmodule Aino.Routes do
   @moduledoc """
-  An Aino set of wrappers for dealing with routes and routing
+  An Aino set of middleware for dealing with routes and routing
 
   ## Examples
 
-  To use the routes wrappers together, see the example below.
+  To use the routes middleware together, see the example below.
 
   ```elixir
   def handle(token) do
@@ -15,36 +15,25 @@ defmodule Aino.Routes do
       post("/orders/:id", [&Orders.authorize/1, &Order.update/1])
     ]
 
-    wrappers = [
-      Aino.Wrappers.common(),
+    middleware = [
+      Aino.Middleware.common(),
       &Aino.Routes.routes(&1, routes),
       &Aino.Routes.match_route/1,
-      &Aino.Wrappers.params/1,
+      &Aino.Middleware.params/1,
       &Aino.Routes.handle_route/1
     ]
 
-    Aino.Token.reduce(token, wrappers)
+    Aino.Token.reduce(token, middleware)
   end
   ```
 
   In the example above you can see why `match_route/1` and `handle_route/1` are
-  separate functions, you can perform other wrappers in between the two. In this
-  example, params are merged together via `Aino.Wrappers.params/1` before
+  separate functions, you can perform other middleware in between the two. In this
+  example, params are merged together via `Aino.Middleware.params/1` before
   handling the route.
   """
 
   alias Aino.Token
-  alias Aino.Wrappers
-
-  @type method() :: :get | :post
-
-  @type path() :: [String.t() | atom()]
-
-  @type route() :: %{
-          method: method(),
-          path: path(),
-          wrappers: Wrappers.wrappers()
-        }
 
   @doc """
   Create a GET route
@@ -58,9 +47,8 @@ defmodule Aino.Routes do
   ]
   ```
   """
-  @spec get(String.t(), Wrappers.wrappers()) :: route()
-  def get(path, wrappers) do
-    wrappers = List.wrap(wrappers)
+  def get(path, middleware) do
+    middleware = List.wrap(middleware)
 
     path =
       path
@@ -77,7 +65,7 @@ defmodule Aino.Routes do
     %{
       method: :get,
       path: path,
-      wrappers: wrappers
+      middleware: middleware
     }
   end
 
@@ -93,9 +81,8 @@ defmodule Aino.Routes do
   ]
   ```
   """
-  @spec post(String.t(), Wrappers.wrappers()) :: route()
-  def post(path, wrappers) do
-    wrappers = List.wrap(wrappers)
+  def post(path, middleware) do
+    middleware = List.wrap(middleware)
 
     path =
       path
@@ -112,7 +99,7 @@ defmodule Aino.Routes do
     %{
       method: :post,
       path: path,
-      wrappers: wrappers
+      middleware: middleware
     }
   end
 
@@ -121,7 +108,6 @@ defmodule Aino.Routes do
 
   Adds the following keys to the token `[:routes]`
   """
-  @spec routes(Token.t(), [route()]) :: Token.t()
   def routes(token, routes) do
     Map.put(token, :routes, routes)
   end
@@ -129,20 +115,19 @@ defmodule Aino.Routes do
   @doc """
   Matches the request against routes on the token
 
-  _Must_ have routes set via `routes/2` before running this wrapper.
+  _Must_ have routes set via `routes/2` before running this middleware.
 
   You _should_ run `handle_route/1` after matching the route, otherwise
   the route is not run.
 
-  Adds the following keys to the token `[:path_params, :wrappers]`
+  Adds the following keys to the token `[:path_params, :middleware]`
   """
-  @spec match_route(Token.t()) :: Token.t()
   def match_route(token) do
     case find_route(token.routes, token.method, token.path) do
-      {:ok, %{wrappers: wrappers}, path_params} ->
+      {:ok, %{middleware: middleware}, path_params} ->
         token
         |> Map.put(:path_params, path_params)
-        |> Map.put(:wrappers, wrappers)
+        |> Map.put(:middleware, middleware)
 
       :error ->
         token
@@ -156,11 +141,10 @@ defmodule Aino.Routes do
   Run the matched route from `match_route/1`
 
   If no route is present, nothing happens. If a route is present, the
-  wrappers stored on the token from the matched request is reduced over.
+  middleware stored on the token from the matched request is reduced over.
   """
-  @spec handle_route(Token.t()) :: Token.t()
-  def handle_route(%{wrappers: wrappers} = token) do
-    Aino.Token.reduce(token, wrappers)
+  def handle_route(%{middleware: middleware} = token) do
+    Aino.Token.reduce(token, middleware)
   end
 
   def handle_route(token), do: token

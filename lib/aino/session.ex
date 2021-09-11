@@ -37,7 +37,7 @@ defmodule Aino.Session do
   @doc """
   Encode session data from the token
 
-  Can only be used with `Aino.Wrappers.cookies/1` and `Aino.Session.salt/2` having run before.
+  Can only be used with `Aino.Middleware.cookies/1` and `Aino.Session.salt/2` having run before.
   """
   def encode(%{session_updated: true} = token) do
     Storage.encode(token.session_config, token)
@@ -114,7 +114,7 @@ defmodule Aino.Session.Cookie do
 
   Verifies the signature and if valid, parses session JSON data.
 
-  Can only be used with `Aino.Wrappers.cookies/1` and `Aino.Session.config/2` having run before.
+  Can only be used with `Aino.Middleware.cookies/1` and `Aino.Session.config/2` having run before.
 
   Adds the following keys to the token `[:session]`
   """

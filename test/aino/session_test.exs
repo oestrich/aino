@@ -6,7 +6,7 @@ defmodule Aino.SessionTest do
   doctest Aino.Session
 
   describe "integration" do
-    test "success: pipeline of wrappers" do
+    test "success: pipeline of middleware" do
       session_data = Jason.encode!(%{"key" => "value"})
 
       session_signature =
