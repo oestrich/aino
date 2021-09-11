@@ -18,6 +18,11 @@ defmodule Aino.Token do
   Start a token from an `:elli` request
 
   The token gains the keys `[:request]`
+
+      iex> request = %Aino.Request{}
+      iex> token = Token.from_request(request)
+      iex> token.request == request
+      true
   """
   def from_request(request) do
     %{request: request}
@@ -27,6 +32,10 @@ defmodule Aino.Token do
   Set a response status on the token
 
   The token gains the keys `[:response_status]`
+
+      iex> token = %{}
+      iex> Token.response_status(token, 200)
+      %{response_status: 200}
   """
   def response_status(token, status) do
     Map.put(token, :response_status, status)
@@ -38,6 +47,14 @@ defmodule Aino.Token do
   Response headers default to an empty list if this is the first header set
 
   The token gains or modifies the keys `[:response_headers]`
+
+      iex> token = %{}
+      iex> Token.response_header(token, "Content-Type", "application/json")
+      %{response_headers: [{"Content-Type", "application/json"}]}
+
+      iex> token = %{response_headers: [{"Content-Type", "text/html"}]}
+      iex> Token.response_header(token, "Location", "/")
+      %{response_headers: [{"Content-Type", "text/html"}, {"Location", "/"}]}
   """
   def response_header(token, key, value) do
     response_headers = Map.get(token, :response_headers, [])
@@ -51,6 +68,14 @@ defmodule Aino.Token do
   `:response_headers` key on the token.
 
   The token gains or modifies the keys `[:response_headers]`
+
+      iex> token = %{}
+      iex> Token.response_headers(token, [{"Content-Type", "application/json"}])
+      %{response_headers: [{"Content-Type", "application/json"}]}
+
+      iex> token = %{response_headers: [{"Content-Type", "text/html"}]}
+      iex> Token.response_headers(token, [{"Location", "/"}])
+      %{response_headers: [{"Location", "/"}]}
   """
   def response_headers(token, headers) do
     Map.put(token, :response_headers, headers)
@@ -63,6 +88,10 @@ defmodule Aino.Token do
   This way the client can know what type of data it received.
 
   The token gains or modifies the keys `[:response_body]`
+
+      iex> token = %{}
+      iex> Token.response_body(token, "html")
+      %{response_body: "html"}
   """
   def response_body(token, body) do
     Map.put(token, :response_body, body)
@@ -106,6 +135,10 @@ defmodule Aino.Token do
 
   The request header that is searched for is lower cased and compared against
   request headers, filtering down to matching headers.
+
+      iex> token = %{headers: [{"content-type", "text/html"}, {"location", "/"}]}
+      iex> Token.request_header(token, "Content-Type")
+      ["text/html"]
   """
   def request_header(token, request_header) do
     request_header = String.downcase(request_header)
@@ -132,15 +165,12 @@ defmodule Aino.Token.Response do
   @doc """
   Sets token fields to render the response body as html
 
-  Headers:
-  ```text
-  Content-Type: text/html
-  ```
-
-  Body:
-  ```text
-  `html`
-  ```
+      iex> token = %{}
+      iex> Token.Response.html(token, "HTML Body")
+      %{
+        response_headers: [{"Content-Type", "text/html"}],
+        response_body: "HTML Body"
+      }
   """
   def html(token, html) do
     token
@@ -151,18 +181,13 @@ defmodule Aino.Token.Response do
   @doc """
   Sets the required token fields be a redirect.
 
-  Status: `302`
-
-  Headers:
-  ```text
-  Content-Type: text/html
-  Location: `url`
-  ```
-
-  Body:
-  ```text
-  Redirecting...
-  ```
+      iex> token = %{}
+      iex> Token.Response.redirect(token, "/")
+      %{
+        response_status: 302,
+        response_headers: [{"Content-Type", "text/html"}, {"Location", "/"}],
+        response_body: "Redirecting..."
+      }
   """
   def redirect(token, url) do
     token

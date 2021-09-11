@@ -120,14 +120,14 @@ defmodule Aino.Routes do
   You _should_ run `handle_route/1` after matching the route, otherwise
   the route is not run.
 
-  Adds the following keys to the token `[:path_params, :middleware]`
+  Adds the following keys to the token `[:path_params, :route_middleware]`
   """
   def match_route(token) do
     case find_route(token.routes, token.method, token.path) do
       {:ok, %{middleware: middleware}, path_params} ->
         token
         |> Map.put(:path_params, path_params)
-        |> Map.put(:middleware, middleware)
+        |> Map.put(:route_middleware, middleware)
 
       :error ->
         token
@@ -143,7 +143,7 @@ defmodule Aino.Routes do
   If no route is present, nothing happens. If a route is present, the
   middleware stored on the token from the matched request is reduced over.
   """
-  def handle_route(%{middleware: middleware} = token) do
+  def handle_route(%{route_middleware: middleware} = token) do
     Aino.Token.reduce(token, middleware)
   end
 
