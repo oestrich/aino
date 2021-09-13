@@ -33,11 +33,11 @@ The only thing that is initially pased in is the `:request`, and at the very end
 
 Aino ships with a common set of middleware that you can include at the top of processing, if you don't want them, simply don't include them! The list of middleware can be a list of lists as well.
 
-Another built in middleware is a simple routing layer. Import the HTTP methods from `Aino.Routes` that you're going to use in your routes. Then each HTTP method function takes the route and a middleware that should be run on the route.
+Another built in middleware is a simple routing layer. Import the HTTP methods from `Aino.Middleware.Routes` that you're going to use in your routes. Then each HTTP method function takes the route and a middleware that should be run on the route.
 
 ```elixir
 defmodule Aino.Handler do
-  import Aino.Routes, only: [get: 2]
+  import Aino.Middleware.Routes, only: [get: 2]
 
   def handle(token) do
     routes = [
@@ -47,7 +47,7 @@ defmodule Aino.Handler do
     middleware = [
       Aino.Middleware.common(),
       &Aino.Middleware.routes(&1, routes),
-      &Aino.Routes.handle_route/1,
+      &Aino.Middleware.Routes.handle_route/1,
     ]
 
     Aino.Token.reduce(token, middleware)

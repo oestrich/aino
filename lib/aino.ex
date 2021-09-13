@@ -1,6 +1,17 @@
 defmodule Aino do
   @moduledoc """
   Aino, an experimental HTTP framework
+
+  To load Aino, add to your supervision tree. `callback` and `port` are both required options.
+
+  ```elixir
+    children = [
+      {Aino, [callback: Aino.Handler, port: 3000]}
+    ]
+  ```
+
+  The `callback` should be an `Aino.Handler`, which has a single `handle/1` function that
+  processes the request.
   """
 
   @behaviour :elli_handler

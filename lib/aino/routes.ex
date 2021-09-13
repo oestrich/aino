@@ -1,4 +1,4 @@
-defmodule Aino.Routes do
+defmodule Aino.Middleware.Routes do
   @moduledoc """
   An Aino set of middleware for dealing with routes and routing
 
@@ -17,10 +17,10 @@ defmodule Aino.Routes do
 
     middleware = [
       Aino.Middleware.common(),
-      &Aino.Routes.routes(&1, routes),
-      &Aino.Routes.match_route/1,
+      &Aino.Middleware.Routes.routes(&1, routes),
+      &Aino.Middleware.Routes.match_route/1,
       &Aino.Middleware.params/1,
-      &Aino.Routes.handle_route/1
+      &Aino.Middleware.Routes.handle_route/1
     ]
 
     Aino.Token.reduce(token, middleware)

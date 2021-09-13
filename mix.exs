@@ -10,7 +10,29 @@ defmodule Aino.MixProject do
       deps: deps(),
       docs: [
         main: "readme",
-        extras: ["README.md"]
+        extras: [
+          "README.md"
+        ],
+        groups_for_modules: [
+          Middleware: [
+            Aino.Middleware,
+            Aino.Middleware.Routes,
+            Aino.Middleware.Development
+          ],
+          Token: [
+            Aino.Token,
+            Aino.Token.Response
+          ],
+          View: [
+            Aino.View
+          ],
+          Session: [
+            Aino.Session,
+            Aino.Session.Token,
+            Aino.Session.Storage,
+            Aino.Session.Cookie
+          ]
+        ]
       ]
     ]
   end

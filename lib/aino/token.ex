@@ -108,10 +108,10 @@ defmodule Aino.Token do
   ```elixir
   middleware = [
     Aino.Middleware.common(),
-    &Aino.Routes.routes(&1, routes),
-    &Aino.Routes.match_route/1,
+    &Aino.Middleware.Routes.routes(&1, routes),
+    &Aino.Middleware.Routes.match_route/1,
     &Aino.Middleware.params/1,
-    &Aino.Routes.handle_route/1,
+    &Aino.Middleware.Routes.handle_route/1,
   ]
 
   reduce(token, middleware)
