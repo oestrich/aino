@@ -73,7 +73,7 @@ jobs:
         helm: helm3
         values: |
           web:
-            host: ainoweb
+            host: ainoweb.dev
           image:
             repository: oestrich/ainoweb.dev
             tag: '${{ github.sha }}'
