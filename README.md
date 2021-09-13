@@ -1,6 +1,12 @@
 # Aino
 
-An experimental HTTP framework built on top of [elli](https://github.com/elli-lib/elli)
+An experimental HTTP framework built on top of [elli][elli].
+
+## Why Aino?
+
+Aino is an experiment to try out a new way of writing HTTP applications on Elixir. It uses [elli][elli] instead of Cowboy like Phoenix and Plug. Instead of writing an Endpoint like Phoenix, you write a Handler. The handler's job is to reduce across a series of middleware that are simple functions to generate a response.
+
+The handler also works on a token instead of a conn. The token is a simple map that you can add whatever keys you wish to it. Aino has a few standard keys but you can easily ignore them if you want to write your own processing.
 
 ## How to use Aino
 
@@ -71,3 +77,5 @@ defmodule Index.View do
   ]
 end
 ```
+
+[elli]: https://github.com/elli-lib/elli
