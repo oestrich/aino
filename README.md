@@ -47,6 +47,7 @@ defmodule Aino.Handler do
     middleware = [
       Aino.Middleware.common(),
       &Aino.Middleware.routes(&1, routes),
+      &Aino.Middleware.Routes.match_route/1,
       &Aino.Middleware.Routes.handle_route/1,
     ]
 
@@ -75,6 +76,48 @@ defmodule Index.View do
   Aino.View.compile [
     "lib/index/index.html.eex"
   ]
+end
+```
+
+## Concepts
+
+### Handler
+
+A handler processes an incoming request from Aino.
+
+The `handle/1` function is passed an `Aino.Token`.
+
+The handler _must_ return a token that contains three keys to return a response:
+
+- `:response_status`
+- `:response_headers`
+- `:response_body`
+
+If the token does not contain these three keys, a 500 error is returned.
+
+Inside your handler, you may wish to use several `Aino.Middleware` including
+`Aino.Middleware.common/0`.
+
+### Token
+
+The token is what flows through the entire web request. Tokens are simple maps
+that contain no defined keys beyond `:request`. Several Aino middleware add
+keys and they are documented in the functions.
+
+
+### Middleware
+
+Middleware are simple functions that take the token and return the token. They process
+the request and add or modify existing keys on the token.
+
+```elixir
+def headers(%{request: request} = token) do
+  headers =
+    Enum.map(request.headers, fn {header, value} ->
+      {String.downcase(header), value}
+    end)
+
+  Map.put(token, :headers, headers)
 end
 ```
 
