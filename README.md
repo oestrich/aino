@@ -110,6 +110,8 @@ keys and they are documented in the functions.
 Middleware are simple functions that take the token and return the token. They process
 the request and add or modify existing keys on the token.
 
+An example middleware is `Aino.Middleware.headers/1`:
+
 ```elixir
 def headers(%{request: request} = token) do
   headers =
