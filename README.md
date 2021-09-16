@@ -81,7 +81,7 @@ end
 
 ## Concepts
 
-### Handler
+### `Aino.Handler`
 
 A handler processes an incoming request from Aino.
 
@@ -98,14 +98,14 @@ If the token does not contain these three keys, a 500 error is returned.
 Inside your handler, you may wish to use several `Aino.Middleware` including
 `Aino.Middleware.common/0`.
 
-### Token
+### `Aino.Token`
 
 The token is what flows through the entire web request. Tokens are simple maps
 that contain no defined keys beyond `:request`. Several Aino middleware add
 keys and they are documented in the functions.
 
 
-### Middleware
+### `Aino.Middleware`
 
 Middleware are simple functions that take the token and return the token. They process
 the request and add or modify existing keys on the token.
