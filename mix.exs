@@ -8,6 +8,8 @@ defmodule Aino.MixProject do
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      description: "A simple HTTP framework",
+      package: package(),
       docs: [
         main: "readme",
         extras: [
@@ -52,5 +54,15 @@ defmodule Aino.MixProject do
       {:ex_doc, "~> 0.25.2", only: [:dev]},
       {:jason, "~> 1.2"}
     ]
+  end
+
+  defp package do
+    %{
+      maintainers: ["Eric Oestrich"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/oestrich/aino"
+      }
+    }
   end
 end
