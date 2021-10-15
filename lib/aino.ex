@@ -36,12 +36,21 @@ defmodule Aino do
   end
 
   @impl true
+  def init(request, _args) do
+    case :elli_request.get_header("Upgrade", request) do
+      "websocket" ->
+        {:ok, :handover}
+
+      _ ->
+        :ignore
+    end
+  end
+
+  @impl true
   def handle(request, callback) do
     try do
       request
-      |> Aino.Request.from_record()
-      |> Aino.Token.from_request()
-      |> callback.handle()
+      |> handle_request(callback)
       |> handle_response()
     rescue
       exception ->
@@ -53,6 +62,26 @@ defmodule Aino do
 
         {500, [{"Content-Type", "text/html"}], Aino.Exception.render(assigns)}
     end
+  end
+
+  defp handle_request(request, callback) do
+    token =
+      request
+      |> Aino.Request.from_record()
+      |> Aino.Token.from_request()
+
+    case :elli_request.get_header("Upgrade", request) do
+      "websocket" ->
+        Aino.WebSocket.handle(token, callback)
+        Map.put(token, :handover, true)
+
+      _ ->
+        callback.handle(token)
+    end
+  end
+
+  defp handle_response(%{handover: true}) do
+    {:close, <<>>}
   end
 
   defp handle_response(token) do

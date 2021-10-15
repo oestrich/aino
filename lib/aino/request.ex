@@ -10,9 +10,11 @@ defmodule Aino.Request do
 
   defstruct keys
 
-  def from_record(req)
-
   def from_record({:req, unquote_splicing(vals)}) do
     %__MODULE__{unquote_splicing(pairs)}
+  end
+
+  def to_record(%Aino.Request{unquote_splicing(pairs)}) do
+    {:req, unquote_splicing(vals)}
   end
 end
