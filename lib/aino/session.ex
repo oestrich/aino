@@ -75,6 +75,15 @@ defmodule Aino.Session.Token do
     See `Aino.Session.decode/1`
     """
   end
+
+  @doc """
+  Clear a session, resetting to an empty map
+  """
+  def clear(token) do
+    token
+    |> Map.put(:session, %{})
+    |> Map.put(:session_updated, true)
+  end
 end
 
 defprotocol Aino.Session.Storage do

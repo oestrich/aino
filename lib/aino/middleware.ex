@@ -26,6 +26,7 @@ defmodule Aino.Middleware do
       &headers/1,
       &query_params/1,
       &request_body/1,
+      &adjust_method/1,
       &cookies/1
     ]
   end
@@ -176,6 +177,59 @@ defmodule Aino.Middleware do
         token
     end
   end
+
+  @doc """
+  Adjust the request's method based on a special post body parameter
+
+  Since browsers cannot perform DELETE/PUT/PATCH requests, allow overriding the method
+  based on the `_method` parameter.
+
+  POST body data *must* be parsed before being able to adjust the method.
+
+      iex> token = %{method: :post, parsed_body: %{"_method" => "delete"}}
+      iex> token = Middleware.adjust_method(token)
+      iex> token.method
+      :delete
+
+      iex> token = %{method: :post, parsed_body: %{"_method" => "patch"}}
+      iex> token = Middleware.adjust_method(token)
+      iex> token.method
+      :patch
+
+      iex> token = %{method: :post, parsed_body: %{"_method" => "put"}}
+      iex> token = Middleware.adjust_method(token)
+      iex> token.method
+      :put
+
+  Ignored adjustments
+
+      iex> token = %{method: :post, parsed_body: %{"_method" => "new"}}
+      iex> token = Middleware.adjust_method(token)
+      iex> token.method
+      :post
+
+      iex> token = %{method: :get}
+      iex> token = Middleware.adjust_method(token)
+      iex> token.method
+      :get
+  """
+  def adjust_method(%{method: :post} = token) do
+    case token.parsed_body["_method"] do
+      "delete" ->
+        Map.put(token, :method, :delete)
+
+      "patch" ->
+        Map.put(token, :method, :patch)
+
+      "put" ->
+        Map.put(token, :method, :put)
+
+      _ ->
+        token
+    end
+  end
+
+  def adjust_method(token), do: token
 
   @doc """
   Merge params into a single map

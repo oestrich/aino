@@ -36,6 +36,39 @@ defmodule Aino.Middleware.Routes do
   alias Aino.Token
 
   @doc """
+  Create a DELETE route
+
+  ## Examples
+
+  ```elixir
+  routes = [
+    delete("/orders/:id", [&Orders.authorize/1, &Order.delete/1])
+  ]
+  ```
+  """
+  def delete(path, middleware) do
+    middleware = List.wrap(middleware)
+
+    path =
+      path
+      |> String.split("/")
+      |> Enum.reject(fn part -> part == "" end)
+      |> Enum.map(fn
+        ":" <> variable ->
+          String.to_atom(variable)
+
+        part ->
+          part
+      end)
+
+    %{
+      method: :delete,
+      path: path,
+      middleware: middleware
+    }
+  end
+
+  @doc """
   Create a GET route
 
   ## Examples
