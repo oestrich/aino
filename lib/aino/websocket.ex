@@ -18,10 +18,17 @@ defmodule Aino.WebSocket do
   end
 end
 
+defmodule Aino.WebSocket.Event do
+  @derive Jason.Encoder
+  defstruct [:event, :data]
+end
+
 defmodule Aino.WebSocket.Handler do
   @moduledoc """
   Process an incoming websocket from Aino
   """
+
+  require Logger
 
   @behaviour :elli_websocket_handler
 
@@ -90,15 +97,25 @@ defmodule Aino.WebSocket.Handler do
       session: state.session
     }
 
-    token = state.callback.handle(token, data)
+    case Jason.decode(data) do
+      {:ok, data} ->
+        token = state.callback.handle(token, data)
 
-    state = Map.put(state, :session, token.session)
+        state = Map.put(state, :session, token.session)
 
-    case token do
-      %{response: response} ->
-        {:reply, {:text, response}, state}
+        case token do
+          %{response: response} ->
+            {:reply, {:text, response}, state}
 
-      _ ->
+          _ ->
+            {:ok, state}
+        end
+
+      {:error, _reason} ->
+        Logger.error(
+          "Could not parse incoming data, make sure to `JSON.stringify` before sending an event"
+        )
+
         {:ok, state}
     end
   end
@@ -114,6 +131,10 @@ defmodule Aino.WebSocket.Handler do
     state = Map.put(state, :session, token.session)
 
     case token do
+      %{response: %Aino.WebSocket.Event{} = response} ->
+        response = Jason.encode!(response)
+        {:reply, {:text, response}, state}
+
       %{response: response} ->
         {:reply, {:text, response}, state}
 
