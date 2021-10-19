@@ -7,17 +7,17 @@ defmodule Aino.Middleware.Routes do
   To use the routes middleware together, see the example below.
 
   ```elixir
-  def handle(token) do
-    routes = [
-      get("/orders", &Orders.index/1),
-      get("/orders/:id", [&Orders.authorize/1, &Order.show/1]),
-      post("/orders", &Orders.create/1),
-      post("/orders/:id", [&Orders.authorize/1, &Order.update/1])
-    ]
+  routes([
+    get("/orders", &Orders.index/1, as: :orders),
+    get("/orders/:id", [&Orders.authorize/1, &Order.show/1], as: :order),
+    post("/orders", &Orders.create/1),
+    post("/orders/:id", [&Orders.authorize/1, &Order.update/1])
+  ])
 
+  def handle(token) do
     middleware = [
       Aino.Middleware.common(),
-      &Aino.Middleware.Routes.routes(&1, routes),
+      &Aino.Middleware.Routes.routes(&1, routes()),
       &Aino.Middleware.Routes.match_route/1,
       &Aino.Middleware.params/1,
       &Aino.Middleware.Routes.handle_route/1
@@ -36,17 +36,100 @@ defmodule Aino.Middleware.Routes do
   alias Aino.Token
 
   @doc """
+  Configure routes for the handler
+
+  Defines `routes/0` and `__MODULE__.Routes` for route helper functions
+
+  When defining routes, provide the `:as` option to have `_path` and `_url` functions
+  generated for you. E.g. `as: :sign_in` will generate `Routes.sign_in_path/2` and
+  `Routes.sign_in_url/2`.
+
+  Note that when defining routes, you must only define one `:as` a particular atom. For
+  instance, if you have multiple routes pointing at the url `/orders/:id`, you should only
+  add `as: :order` to the first route.
+
+  ```elixir
+  routes([
+    get("/", &MyApp.Web.Page.root/1, as: :root),
+    get("/sign-in", &MyApp.Web.Session.show/1, as: :sign_in),
+    post("/sign-in", &MyApp.Web.Session.create/1),
+    delete("/sign-out", &MyApp.Web.Session.delete/1, as: :sign_out),
+    get("/orders", &MyApp.Web.Orders.index/1, as: :orders),
+    get("/orders/:id", &MyApp.Web.Orders.show/1, as: :order)
+  ])
+  ```
+  """
+  defmacro routes(routes_list) do
+    module = compile_routes_module(routes_list)
+
+    quote do
+      def routes(), do: unquote(routes_list)
+
+      unquote(module)
+    end
+  end
+
+  def compile_routes_module(routes) do
+    quote bind_quoted: [routes: routes] do
+      defmodule Routes do
+        @moduledoc false
+
+        alias Aino.Middleware.Routes
+
+        routes
+        |> Enum.reject(fn route -> is_nil(route[:as]) end)
+        |> Enum.map(fn route ->
+          path = :"#{route[:as]}_path"
+          url = :"#{route[:as]}_url"
+
+          def unquote(path)(_token, params \\ %{}) do
+            Routes.compile_path(unquote(route.path), params)
+          end
+
+          def unquote(url)(token, params \\ %{}) do
+            Routes.compile_url(token, unquote(route.path), params)
+          end
+        end)
+      end
+    end
+  end
+
+  @doc false
+  def compile_url(token, path, params) do
+    path = compile_path(path, params)
+    "#{token.scheme}://#{token.host}:#{token.port}#{path}"
+  end
+
+  @doc false
+  def compile_path(path, params) do
+    path =
+      path
+      |> Enum.map(fn part ->
+        case is_atom(part) do
+          true ->
+            params[part]
+
+          false ->
+            part
+        end
+      end)
+      |> Enum.join("/")
+
+    "/" <> path
+  end
+
+  @doc """
   Create a DELETE route
 
   ## Examples
 
   ```elixir
   routes = [
-    delete("/orders/:id", [&Orders.authorize/1, &Order.delete/1])
+    delete("/orders/:id", [&Orders.authorize/1, &Order.delete/1], as: :order)
   ]
   ```
   """
-  def delete(path, middleware) do
+  def delete(path, middleware, opts \\ []) do
     middleware = List.wrap(middleware)
 
     path =
@@ -64,7 +147,8 @@ defmodule Aino.Middleware.Routes do
     %{
       method: :delete,
       path: path,
-      middleware: middleware
+      middleware: middleware,
+      as: opts[:as]
     }
   end
 
@@ -75,12 +159,12 @@ defmodule Aino.Middleware.Routes do
 
   ```elixir
   routes = [
-    get("/orders", &Orders.index/1),
-    get("/orders/:id", [&Orders.authorize/1, &Order.show/1])
+    get("/orders", &Orders.index/1, as: :orders),
+    get("/orders/:id", [&Orders.authorize/1, &Order.show/1], as: :order)
   ]
   ```
   """
-  def get(path, middleware) do
+  def get(path, middleware, opts \\ []) do
     middleware = List.wrap(middleware)
 
     path =
@@ -98,7 +182,8 @@ defmodule Aino.Middleware.Routes do
     %{
       method: :get,
       path: path,
-      middleware: middleware
+      middleware: middleware,
+      as: opts[:as]
     }
   end
 
@@ -109,12 +194,12 @@ defmodule Aino.Middleware.Routes do
 
   ```elixir
   routes = [
-    post("/orders", &Orders.create/1),
-    post("/orders/:id", [&Orders.authorize/1, &Order.update/1])
+    post("/orders", &Orders.create/1, as: :orders),
+    post("/orders/:id", [&Orders.authorize/1, &Order.update/1], as: :order)
   ]
   ```
   """
-  def post(path, middleware) do
+  def post(path, middleware, opts \\ []) do
     middleware = List.wrap(middleware)
 
     path =
@@ -132,7 +217,8 @@ defmodule Aino.Middleware.Routes do
     %{
       method: :post,
       path: path,
-      middleware: middleware
+      middleware: middleware,
+      as: opts[:as]
     }
   end
 
@@ -142,7 +228,16 @@ defmodule Aino.Middleware.Routes do
   Adds the following keys to the token `[:routes]`
   """
   def routes(token, routes) do
-    Map.put(token, :routes, routes)
+    default_assigns =
+      Map.merge(token.default_assigns, %{
+        routes: %{
+          root_path: fn -> "/" end
+        }
+      })
+
+    token
+    |> Map.put(:routes, routes)
+    |> Map.put(:default_assigns, default_assigns)
   end
 
   @doc """

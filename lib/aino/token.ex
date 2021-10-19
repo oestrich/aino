@@ -128,7 +128,7 @@ defmodule Aino.Token do
   end
 
   @doc """
-  Get a response header from the token
+  Get a request header from the token
 
   This must be used with `Aino.Middleware.headers/1` since that middleware sets
   up the token to include a `:headers` key that is downcased.
@@ -146,6 +146,31 @@ defmodule Aino.Token do
     token.headers
     |> Enum.filter(fn {header, _value} ->
       request_header == header
+    end)
+    |> Enum.map(fn {_header, value} ->
+      value
+    end)
+  end
+
+  @doc """
+  Get a response header from the token
+
+  This must be used with `Aino.Middleware.headers/1` since that middleware sets
+  up the token to include a `:headers` key that is downcased.
+
+  The response header that is searched for is lower cased and compared against
+  response headers, filtering down to matching headers.
+
+      iex> token = %{response_headers: [{"content-type", "text/html"}, {"location", "/"}]}
+      iex> Token.response_header(token, "Content-Type")
+      ["text/html"]
+  """
+  def response_header(token, response_header) do
+    response_header = String.downcase(response_header)
+
+    token.response_headers
+    |> Enum.filter(fn {header, _value} ->
+      response_header == String.downcase(header)
     end)
     |> Enum.map(fn {_header, value} ->
       value

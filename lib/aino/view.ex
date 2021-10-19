@@ -27,7 +27,7 @@ defmodule Aino.View do
       end)
 
     quote do
-      def render(filename, assigns \\ %{})
+      def render(token, filename, assigns \\ %{})
 
       unquote(templates)
     end
@@ -56,9 +56,22 @@ defmodule Aino.View do
 
       @file file
       @external_resource file
-      def render(unquote(filename), var!(assigns)) do
+      def render(var!(token), unquote(filename), var!(assigns)) do
         _ = var!(assigns)
-        unquote(compiled)
+
+        default_assigns = %{
+          scheme: var!(token).scheme,
+          host: var!(token).host,
+          port: var!(token).port
+        }
+
+        default_assigns = Map.merge(default_assigns, var!(token).default_assigns)
+        var!(assigns) = Map.merge(default_assigns, var!(assigns))
+        _ = var!(assigns)
+
+        response = unquote(compiled)
+
+        Aino.Token.response_body(var!(token), response)
       end
     end
   end

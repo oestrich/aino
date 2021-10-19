@@ -22,7 +22,7 @@ defmodule Aino do
   def child_spec(opts) do
     opts = [
       callback: Aino,
-      callback_args: opts[:callback],
+      callback_args: opts,
       port: opts[:port]
     ]
 
@@ -47,10 +47,10 @@ defmodule Aino do
   end
 
   @impl true
-  def handle(request, callback) do
+  def handle(request, options) do
     try do
       request
-      |> handle_request(callback)
+      |> handle_request(options)
       |> handle_response()
     rescue
       exception ->
@@ -64,11 +64,17 @@ defmodule Aino do
     end
   end
 
-  defp handle_request(request, callback) do
+  defp handle_request(request, options) do
+    callback = options[:callback]
+
     token =
       request
       |> Aino.Request.from_record()
       |> Aino.Token.from_request()
+      |> Map.put(:scheme, scheme(options))
+      |> Map.put(:host, options[:host])
+      |> Map.put(:port, options[:port])
+      |> Map.put(:default_assigns, %{})
 
     case :elli_request.get_header("Upgrade", request) do
       "websocket" ->
@@ -98,6 +104,8 @@ defmodule Aino do
     end
   end
 
+  defp scheme(options), do: options[:scheme] || :http
+
   @impl true
   def handle_event(:request_complete, data, _args) do
     {timings, _} = Enum.at(data, 4)
@@ -115,8 +123,8 @@ defmodule Aino do
     :ok
   end
 
-  def handle_event(:elli_startup, _data, _args) do
-    Logger.info("Aino started")
+  def handle_event(:elli_startup, _data, opts) do
+    Logger.info("Aino started on #{scheme(opts)}://#{opts[:host]}:#{opts[:port]}")
 
     :ok
   end
