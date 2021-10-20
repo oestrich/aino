@@ -84,6 +84,9 @@ defmodule Aino.WebSocket.Handler do
         case callback.init(state) do
           {:ok, state} ->
             {:ok, [], Map.put(state, :callback, callback)}
+
+          :shutdown ->
+            {:shutdown, []}
         end
 
       nil ->
