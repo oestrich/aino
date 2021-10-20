@@ -123,7 +123,13 @@ defmodule Aino.Token do
         reduce(token, middleware)
 
       middleware, token ->
-        middleware.(token)
+        case token do
+          %{halt: true} ->
+            token
+
+          _ ->
+            middleware.(token)
+        end
     end)
   end
 

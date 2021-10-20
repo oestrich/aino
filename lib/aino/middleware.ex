@@ -266,6 +266,43 @@ defmodule Aino.Middleware do
       {to_string(key), value}
     end)
   end
+
+  @doc """
+  Serve static assets
+
+  Loads static files out the `priv/static` folder for your OTP app. Looks for
+  the path to begin with `/assets` and everything afterwards is used as a file.
+  If the file exists, it is returned with a `200` status code.
+
+  Example: `/assets/js/app.js` will look for a file in `priv/static/js/app.js`
+  """
+  def assets(token) do
+    case token.path do
+      ["assets" | path] ->
+        path = Path.join(:code.priv_dir(token.otp_app), Enum.join(["static" | path], "/"))
+
+        case File.exists?(path) do
+          true ->
+            data = File.read!(path)
+
+            token
+            |> Map.put(:halt, true)
+            |> Token.response_status(200)
+            |> Token.response_headers([])
+            |> Token.response_body(data)
+
+          false ->
+            token
+            |> Map.put(:halt, true)
+            |> Token.response_status(404)
+            |> Token.response_header("Content-Type", "text/plain")
+            |> Token.response_body("Not found")
+        end
+
+      _ ->
+        token
+    end
+  end
 end
 
 defmodule Aino.Middleware.Development do

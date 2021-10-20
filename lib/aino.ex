@@ -71,6 +71,7 @@ defmodule Aino do
       request
       |> Aino.Request.from_record()
       |> Aino.Token.from_request()
+      |> Map.put(:otp_app, options[:otp_app])
       |> Map.put(:scheme, scheme(options))
       |> Map.put(:host, options[:host])
       |> Map.put(:port, options[:port])
