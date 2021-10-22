@@ -288,7 +288,7 @@ defmodule Aino.Middleware do
             token
             |> Map.put(:halt, true)
             |> Token.response_status(200)
-            |> Token.response_headers([])
+            |> Token.response_header("Cache-Control", "public, max-age=604800, immutable")
             |> Token.response_body(data)
 
           false ->
