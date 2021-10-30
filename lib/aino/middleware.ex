@@ -6,6 +6,8 @@ defmodule Aino.Middleware do
   as parsing the POST body for form data or parsing query/path params.
   """
 
+  require Logger
+
   alias Aino.Token
 
   @doc """
@@ -285,10 +287,15 @@ defmodule Aino.Middleware do
           true ->
             data = File.read!(path)
 
+            method = String.upcase(to_string(token.method))
+            path = "/" <> Enum.join(token.path, "/")
+
+            Logger.info("#{method} #{path}")
+
             token
             |> Map.put(:halt, true)
             |> Token.response_status(200)
-            |> Token.response_header("Cache-Control", "public, max-age=604800, immutable")
+            |> Token.response_header("Cache-Control", asset_cache_control(token))
             |> Token.response_body(data)
 
           false ->
@@ -302,6 +309,31 @@ defmodule Aino.Middleware do
       _ ->
         token
     end
+  end
+
+  defp asset_cache_control(token) do
+    case token.environment do
+      "production" ->
+        "public, max-age=604800"
+
+      "development" ->
+        "no-cache"
+    end
+  end
+
+  def logging(token) do
+    method = String.upcase(to_string(token.method))
+    path = "/" <> Enum.join(token.path, "/")
+
+    case Map.keys(token.params) == [] do
+      true ->
+        Logger.info("#{method} #{path}")
+
+      false ->
+        Logger.info("#{method} #{path}\nParameters: #{inspect(token.params)}")
+    end
+
+    token
   end
 end
 

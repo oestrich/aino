@@ -76,6 +76,7 @@ defmodule Aino do
       |> Map.put(:host, options[:host])
       |> Map.put(:port, options[:port])
       |> Map.put(:default_assigns, %{})
+      |> Map.put(:environment, options[:environment])
 
     case :elli_request.get_header("Upgrade", request) do
       "websocket" ->
