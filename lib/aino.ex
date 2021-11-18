@@ -114,7 +114,13 @@ defmodule Aino do
     diff = timings[:request_end] - timings[:request_start]
     microseconds = System.convert_time_unit(diff, :native, :microsecond)
 
-    Logger.info("Request complete in #{microseconds} microseconds")
+    if microseconds > 1_000 do
+      milliseconds = System.convert_time_unit(diff, :native, :millisecond)
+
+      Logger.info("Request complete in #{milliseconds}ms")
+    else
+      Logger.info("Request complete in #{microseconds}μs")
+    end
 
     :ok
   end

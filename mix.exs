@@ -56,6 +56,7 @@ defmodule Aino.MixProject do
       {:credo, "~> 1.5", only: [:dev, :test]},
       {:elli, "~> 3.3"},
       {:elli_websocket, "~> 0.1"},
+      {:erlexec, "~> 1.0"},
       {:ex_doc, "~> 0.25.2", only: [:dev]},
       {:jason, "~> 1.2"}
     ]
