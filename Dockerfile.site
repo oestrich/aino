@@ -1,6 +1,6 @@
 FROM hexpm/elixir:1.12.2-erlang-24.0.5-alpine-3.14.0 as builder
 
-RUN apk add --no-cache gcc git make musl-dev
+RUN apk add --no-cache alpine-sdk
 RUN mix local.rebar --force && mix local.hex --force
 WORKDIR /app
 ENV MIX_ENV=dev
