@@ -349,6 +349,8 @@ defmodule Aino.Middleware.Development do
   @doc """
   Recompiles the application
   """
+  def recompile(%{halt: true} = token), do: token
+
   def recompile(token) do
     IEx.Helpers.recompile()
 
