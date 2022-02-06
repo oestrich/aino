@@ -92,7 +92,7 @@ defmodule Aino do
     {:close, <<>>}
   end
 
-  defp handle_response(token = %{chunk: true}) do
+  defp handle_response(%{chunk: true} = token) do
     Aino.ChunkedHandler.Server.start_link(token)
     {:chunk, token.response_headers}
   end
