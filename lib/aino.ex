@@ -92,6 +92,11 @@ defmodule Aino do
     {:close, <<>>}
   end
 
+  defp handle_response(token = %{chunk: true}) do
+    Aino.ChunkedHandler.Server.start_link(token)
+    {:chunk, token.response_headers}
+  end
+
   defp handle_response(token) do
     required_keys = [:response_status, :response_headers, :response_body]
 
