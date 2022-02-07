@@ -36,15 +36,7 @@ defmodule Aino do
   end
 
   @impl true
-  def init(request, _args) do
-    case :elli_request.get_header("Upgrade", request) do
-      "websocket" ->
-        {:ok, :handover}
-
-      _ ->
-        :ignore
-    end
-  end
+  def init(_request, _args), do: :ignore
 
   @impl true
   def handle(request, options) do
@@ -78,18 +70,16 @@ defmodule Aino do
       |> Map.put(:default_assigns, %{})
       |> Map.put(:environment, options[:environment])
 
-    case :elli_request.get_header("Upgrade", request) do
-      "websocket" ->
-        Aino.WebSocket.handle(token, callback)
-        Map.put(token, :handover, true)
-
-      _ ->
-        callback.handle(token)
-    end
+    callback.handle(token)
   end
 
   defp handle_response(%{handover: true}) do
     {:close, <<>>}
+  end
+
+  defp handle_response(%{chunk: true} = token) do
+    Aino.ChunkedHandler.Server.start_link(token)
+    {:chunk, token.response_headers}
   end
 
   defp handle_response(token) do
