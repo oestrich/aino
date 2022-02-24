@@ -133,11 +133,11 @@ defmodule Aino.Session.FlashTest do
       token = Flash.put(token, :info, "Success!")
 
       assert token.session == %{
-        "aino_flash" => %{
-          "error" => "Oh no",
-          "info" => "Success!"
-        }
-      }
+               "aino_flash" => %{
+                 "error" => "Oh no",
+                 "info" => "Success!"
+               }
+             }
     end
 
     test "failure: session not loaded" do

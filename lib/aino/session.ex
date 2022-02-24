@@ -189,10 +189,11 @@ defmodule Aino.Session.Cookie do
         case Jason.encode(session) do
           {:ok, data} ->
             signature = signature(config, data)
+            signature = "_aino_session_signature=#{signature}; HttpOnly; Path=/"
 
             token
             |> Token.response_header("Set-Cookie", "_aino_session=#{data}; HttpOnly; Path=/")
-            |> Token.response_header("Set-Cookie", "_aino_session_signature=#{signature}; HttpOnly; Path=/")
+            |> Token.response_header("Set-Cookie", signature)
 
           :error ->
             token
