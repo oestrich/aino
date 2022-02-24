@@ -106,3 +106,46 @@ defmodule Aino.SessionTest do
     end
   end
 end
+
+defmodule Aino.Session.FlashTest do
+  use ExUnit.Case, async: true
+
+  alias Aino.Session.Flash
+
+  describe "putting flash messages" do
+    test "success: adds a key to 'aino_flash'" do
+      token = %{session: %{}}
+
+      token = Flash.put(token, :info, "Success!")
+
+      assert token.session == %{"aino_flash" => %{"info" => "Success!"}}
+    end
+
+    test "success: appends to an existing 'aino_flash'" do
+      token = %{
+        session: %{
+          "aino_flash" => %{
+            "error" => "Oh no"
+          }
+        }
+      }
+
+      token = Flash.put(token, :info, "Success!")
+
+      assert token.session == %{
+        "aino_flash" => %{
+          "error" => "Oh no",
+          "info" => "Success!"
+        }
+      }
+    end
+
+    test "failure: session not loaded" do
+      token = %{}
+
+      assert_raise RuntimeError, fn ->
+        Flash.put(token, :key, "value")
+      end
+    end
+  end
+end

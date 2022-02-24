@@ -77,6 +77,27 @@ defmodule Aino.Session.Token do
   end
 
   @doc """
+  Delete a key from the session
+
+  While keeping the rest of the session in tact
+  """
+  def delete(%{session: session} = token, key) do
+    session = Map.delete(session, key)
+
+    token
+    |> Map.put(:session, session)
+    |> Map.put(:session_updated, true)
+  end
+
+  def delete(_token, _key, _value) do
+    raise """
+    Make sure to decode session data before trying to remove values from it
+
+    See `Aino.Session.decode/1`
+    """
+  end
+
+  @doc """
   Clear a session, resetting to an empty map
   """
   def clear(token) do
@@ -170,8 +191,8 @@ defmodule Aino.Session.Cookie do
             signature = signature(config, data)
 
             token
-            |> Token.response_header("Set-Cookie", "_aino_session=#{data}")
-            |> Token.response_header("Set-Cookie", "_aino_session_signature=#{signature}")
+            |> Token.response_header("Set-Cookie", "_aino_session=#{data}; HttpOnly; Path=/")
+            |> Token.response_header("Set-Cookie", "_aino_session_signature=#{signature}; HttpOnly; Path=/")
 
           :error ->
             token
@@ -191,6 +212,71 @@ defmodule Aino.Session.Cookie do
 
     def encode(config, token) do
       Cookie.encode(config, token)
+    end
+  end
+end
+
+defmodule Aino.Session.Flash do
+  @moduledoc """
+  A temporary storage for strings
+
+  Primarily to display notices on the next page load, e.g. "Success!" after a POST
+  """
+
+  alias Aino.Session
+
+  @doc """
+  Set a temporary flash message
+
+  _Must_ be after `Aino.Session.decode/1`
+  """
+  def put(%{session: session} = token, key, value) when is_binary(value) do
+    flash = Map.get(session, "aino_flash", %{})
+    flash = Map.put(flash, to_string(key), value)
+    Session.Token.put(token, "aino_flash", flash)
+  end
+
+  def put(_token, _key, _value) do
+    raise """
+    Make sure to decode session data before trying to set flash messages
+
+    See `Aino.Session.decode/1`
+    """
+  end
+
+  @doc """
+  Fetch a key from the loaded flash message
+
+  Can only be used with `Aino.Session.Token.load/1`
+  """
+  def get(%{flash: flash} = _token, key) do
+    Map.get(flash, to_string(key))
+  end
+
+  def get(_token, _key) do
+    raise """
+    Make sure to load flash data before trying to fetch flash messages
+
+    See `Aino.Session.Token.load/1`
+    """
+  end
+
+  @doc """
+  Load flash messages from session storage
+
+  Flash messages in the session are deleted after being loaded.
+
+  _Must_ be after `Aino.Session.decode/1`
+  """
+  def load(token) do
+    case Map.has_key?(token.session, "aino_flash") do
+      true ->
+        token
+        |> Session.Token.delete("aino_flash")
+        |> Map.put(:flash, token.session["aino_flash"])
+
+      false ->
+        Map.put(token, :flash, %{})
     end
   end
 end
