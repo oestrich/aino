@@ -59,22 +59,26 @@ defmodule Aino.Watcher.ExternalProcess do
   end
 
   def handle_continue(:spawn, state) do
-    watcher_path = Path.join(:code.priv_dir(:aino), "watcher")
-
     command_directory = Path.join(File.cwd!(), state.directory)
     command = Path.join(command_directory, state.command)
 
-    port =
-      Port.open({:spawn_executable, watcher_path}, [
-        :binary,
-        args: [command | state.args],
-        cd: command_directory
+    {:ok, _pid, external_pid} =
+      :exec.run_link([command | state.args], [
+        {:cd, command_directory},
+        {:stdout, self()},
+        {:stderr, self()}
       ])
 
-    {:noreply, Map.put(state, :port, port)}
+    {:noreply, Map.put(state, :external_pid, external_pid)}
   end
 
-  def handle_info({port, {:data, output}}, %{port: port} = state) do
+  def handle_info({:stdout, pid, output}, %{external_pid: pid} = state) do
+    IO.puts(output)
+
+    {:noreply, state}
+  end
+
+  def handle_info({:stderr, pid, output}, %{external_pid: pid} = state) do
     IO.puts(output)
 
     {:noreply, state}
