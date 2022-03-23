@@ -67,7 +67,7 @@ jobs:
         target_url: https://ainoweb.dev/
         environment: documentation
     - name: Deploy via helm
-      uses: deliverybot/helm@v1.5.0
+      uses: glopezep/helm@v1.7.1
       with:
         release: ainoweb
         namespace: static-sites
