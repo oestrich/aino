@@ -14,6 +14,8 @@ defmodule Aino.Token do
   These keys are used for generating the request's response.
   """
 
+  @type t() :: map()
+
   @doc """
   Start a token from an `:elli` request
 

@@ -248,7 +248,7 @@ defmodule Aino.Session.Flash do
   @doc """
   Fetch a key from the loaded flash message
 
-  Can only be used with `Aino.Session.Token.load/1`
+  Can only be used with `Aino.Session.Flash.load/1`
   """
   def get(%{flash: flash} = _token, key) do
     Map.get(flash, to_string(key))
@@ -258,7 +258,7 @@ defmodule Aino.Session.Flash do
     raise """
     Make sure to load flash data before trying to fetch flash messages
 
-    See `Aino.Session.Token.load/1`
+    See `Aino.Session.Flash.load/1`
     """
   end
 
