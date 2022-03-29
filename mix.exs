@@ -52,7 +52,7 @@ defmodule Aino.MixProject do
       {:credo, "~> 1.5", only: [:dev, :test]},
       {:elli, "~> 3.3"},
       {:erlexec, "~> 1.0"},
-      {:ex_doc, "~> 0.25.2", only: [:dev]},
+      {:ex_doc, "~> 0.28.0", only: [:dev]},
       {:jason, "~> 1.2"}
     ]
   end
