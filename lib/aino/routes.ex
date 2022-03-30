@@ -103,8 +103,7 @@ defmodule Aino.Middleware.Routes do
   @doc false
   def compile_path(path, params) do
     path =
-      path
-      |> Enum.map(fn part ->
+      Enum.map_join(path, "/", fn part ->
         case is_atom(part) do
           true ->
             params[part]
@@ -113,7 +112,6 @@ defmodule Aino.Middleware.Routes do
             part
         end
       end)
-      |> Enum.join("/")
 
     "/" <> path
   end
