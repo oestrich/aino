@@ -276,6 +276,8 @@ defmodule Aino.Middleware do
   the path to begin with `/assets` and everything afterwards is used as a file.
   If the file exists, it is returned with a `200` status code.
 
+  The content type will be guessed at using the `MIME` hex package.
+
   Example: `/assets/js/app.js` will look for a file in `priv/static/js/app.js`
   """
   def assets(token) do
@@ -288,14 +290,15 @@ defmodule Aino.Middleware do
             data = File.read!(path)
 
             method = String.upcase(to_string(token.method))
-            path = "/" <> Enum.join(token.path, "/")
+            url_path = "/" <> Enum.join(token.path, "/")
 
-            Logger.info("#{method} #{path}")
+            Logger.info("#{method} #{url_path}")
 
             token
             |> Map.put(:halt, true)
             |> Token.response_status(200)
             |> Token.response_header("Cache-Control", asset_cache_control(token))
+            |> Token.response_header("Content-Type", asset_content_type(path))
             |> Token.response_body(data)
 
           false ->
@@ -319,6 +322,10 @@ defmodule Aino.Middleware do
       "development" ->
         "no-cache"
     end
+  end
+
+  defp asset_content_type(path) do
+    MIME.from_path(path)
   end
 
   def logging(token) do

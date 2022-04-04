@@ -53,7 +53,8 @@ defmodule Aino.MixProject do
       {:elli, "~> 3.3"},
       {:erlexec, "~> 1.0"},
       {:ex_doc, "~> 0.28.0", only: [:dev]},
-      {:jason, "~> 1.2"}
+      {:jason, "~> 1.2"},
+      {:mime, "~> 2.0"}
     ]
   end
 
