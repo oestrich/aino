@@ -2,7 +2,7 @@
 
 [![Discord](https://img.shields.io/badge/chat-discord-7289da.svg)](https://discord.gg/wVDSWJ2EjE)
 
-An experimental HTTP framework built on top of [elli][elli].
+An experimental HTTP framework built on top of [elli][elli]. Aino is pronounced as "eye no".
 
 ## Why Aino?
 
