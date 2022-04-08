@@ -2,16 +2,40 @@ defmodule Aino do
   @moduledoc """
   Aino, an experimental HTTP framework
 
-  To load Aino, add to your supervision tree. `callback` and `port` are both required options.
+  To load Aino, add to your supervision tree.
+
+  `callback`, `otp_app`, `host`, and `port` are required options.
+
+  `environment` and `config` are optional and passed into your token
+  when it's created on each request.
 
   ```elixir
+    aino_config = [
+      callback: Example.Web.Handler,
+      otp_app: :example,
+      host: config.host,
+      port: config.port,
+      environment: config.environment,
+      config: %{}
+    ]
+
     children = [
-      {Aino, [callback: Aino.Handler, port: 3000]}
+      {Aino, []}
     ]
   ```
 
   The `callback` should be an `Aino.Handler`, which has a single `handle/1` function that
   processes the request.
+
+  `otp_app` should be the atom of your OTP application, e.g. `:example`.
+
+  `host` and `port` are used for binding and booting the webserver, and
+  as default assigns for the token when rendering views.
+
+  `environment` is the environment the application is running under, similar to `Mix.env()`.
+
+  `config` is a simple map that is passed into the token when created, example
+  values to pass through this config map is your session salt.
   """
 
   @behaviour :elli_handler
@@ -69,6 +93,7 @@ defmodule Aino do
       |> Map.put(:port, options[:port])
       |> Map.put(:default_assigns, %{})
       |> Map.put(:environment, options[:environment])
+      |> Map.put(:config, options[:config])
 
     callback.handle(token)
   end
