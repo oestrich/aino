@@ -56,23 +56,33 @@ defmodule Aino.View do
 
       @file file
       @external_resource file
-      def render(var!(token), unquote(filename), var!(assigns)) do
-        _ = var!(assigns)
+      def simple_render(unquote(filename), var!(assigns)), do: unquote(compiled)
 
-        default_assigns = %{
-          scheme: var!(token).scheme,
-          host: var!(token).host,
-          port: var!(token).port
-        }
-
-        default_assigns = Map.merge(default_assigns, var!(token).default_assigns)
-        var!(assigns) = Map.merge(default_assigns, var!(assigns))
-        _ = var!(assigns)
-
-        response = unquote(compiled)
-
-        Aino.Token.response_body(var!(token), response)
+      @file file
+      @external_resource file
+      def render(token, unquote(filename), assigns) do
+        Aino.View.render_template(__MODULE__, token, unquote(filename), assigns)
       end
     end
+  end
+
+  @doc """
+  Manages default assigns before rendering a template with a token
+
+  Assigns the response value to `response_body`
+  """
+  def render_template(module, token, filename, assigns) do
+    default_assigns = %{
+      scheme: token.scheme,
+      host: token.host,
+      port: token.port
+    }
+
+    default_assigns = Map.merge(default_assigns, token.default_assigns)
+    assigns = Map.merge(default_assigns, assigns)
+
+    response = module.simple_render(filename, assigns)
+
+    Aino.Token.response_body(token, response)
   end
 end
