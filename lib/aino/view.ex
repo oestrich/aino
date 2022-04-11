@@ -27,6 +27,8 @@ defmodule Aino.View do
       end)
 
     quote do
+      def simple_render(filename, assigns \\ %{})
+
       def render(token, filename, assigns \\ %{})
 
       unquote(templates)
@@ -52,11 +54,12 @@ defmodule Aino.View do
     quote bind_quoted: [file: file, filename: filename] do
       require EEx
 
-      compiled = EEx.compile_file(file, [])
-
       @file file
       @external_resource file
-      def simple_render(unquote(filename), var!(assigns)), do: unquote(compiled)
+      def simple_render(unquote(filename), var!(assigns)) do
+        _ = var!(assigns)
+        unquote(EEx.compile_file(file, engine: Aino.View.Engine))
+      end
 
       @file file
       @external_resource file
@@ -84,5 +87,66 @@ defmodule Aino.View do
     response = module.simple_render(filename, assigns)
 
     Aino.Token.response_body(token, response)
+  end
+end
+
+defmodule Aino.View.Engine do
+  @moduledoc false
+
+  @behaviour EEx.Engine
+
+  defstruct [:iodata, :dynamic, :vars_count]
+
+  @impl true
+  def init(_opts) do
+    %__MODULE__{
+      iodata: [],
+      dynamic: [],
+      vars_count: 0
+    }
+  end
+
+  @impl true
+  def handle_begin(state) do
+    %{state | iodata: [], dynamic: []}
+  end
+
+  @impl true
+  def handle_end(quoted) do
+    handle_body(quoted)
+  end
+
+  @impl true
+  def handle_body(state) do
+    %{iodata: iodata, dynamic: dynamic} = state
+    dynamic = [Enum.reverse(iodata) | dynamic]
+    {:__block__, [], Enum.reverse(dynamic)}
+  end
+
+  @impl true
+  def handle_text(state, _meta, text) do
+    %{iodata: iodata} = state
+    %{state | iodata: [text | iodata]}
+  end
+
+  @impl true
+  def handle_expr(state, "=", ast) do
+    ast = Macro.prewalk(ast, &EEx.Engine.handle_assign/1)
+
+    %{iodata: iodata, dynamic: dynamic, vars_count: vars_count} = state
+    var = Macro.var(:"arg#{vars_count}", __MODULE__)
+
+    ast =
+      quote do
+        unquote(var) = String.Chars.to_string(unquote(ast))
+      end
+
+    %{state | dynamic: [ast | dynamic], iodata: [var | iodata], vars_count: vars_count + 1}
+  end
+
+  def handle_expr(state, "", ast) do
+    ast = Macro.prewalk(ast, &EEx.Engine.handle_assign/1)
+    %{dynamic: dynamic} = state
+    %{state | dynamic: [ast | dynamic]}
   end
 end
