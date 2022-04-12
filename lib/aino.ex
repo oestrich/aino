@@ -70,11 +70,9 @@ defmodule Aino do
       |> handle_response()
     rescue
       exception ->
-        Logger.error(Exception.format(:error, exception, __STACKTRACE__))
-
-        assigns = %{
-          exception: Exception.format(:error, exception, __STACKTRACE__)
-        }
+        message = Exception.format(:error, exception, __STACKTRACE__)
+        Logger.error(message)
+        assigns = %{exception: Aino.View.Engine.html_escape(message)}
 
         {500, [{"Content-Type", "text/html"}], Aino.Exception.render(assigns)}
     end
