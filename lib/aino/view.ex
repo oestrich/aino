@@ -96,6 +96,15 @@ defmodule Aino.View do
 end
 
 defprotocol Aino.View.Safe do
+  @moduledoc """
+  Initial protocol based off of `Phoenix.HTML.Safe`
+  """
+
+  @doc """
+  Convert a value to a safe value for displaying to a user
+
+  HTML values that are unexpected should be escaped.
+  """
   def to_iodata(value)
 end
 
@@ -132,6 +141,9 @@ defmodule Aino.View.Engine do
 
   defstruct [:iodata, :dynamic, :vars_count]
 
+  @doc """
+  Escape special HTML characters
+  """
   def html_escape(binary) do
     binary
     |> String.replace(~r/&/, "&amp;")
@@ -189,6 +201,10 @@ defmodule Aino.View.Engine do
     ast = Macro.prewalk(ast, &EEx.Engine.handle_assign/1)
     %{dynamic: dynamic} = state
     %{state | dynamic: [ast | dynamic]}
+  end
+
+  def handle_expr(state, marker, ast) do
+    EEx.Engine.handle_expr(state, marker, ast)
   end
 
   defp to_safe(expression) do
