@@ -136,7 +136,11 @@ defimpl Aino.View.Safe, for: List do
 end
 
 defmodule Aino.View.Engine do
-  @moduledoc false
+  @moduledoc """
+  Aino's EEx view engine
+
+  Makes text safe for rendering in a browser. Similar to `Phoenix.HTML.Engine`.
+  """
 
   @behaviour EEx.Engine
 

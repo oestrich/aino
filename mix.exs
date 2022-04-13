@@ -26,7 +26,9 @@ defmodule Aino.MixProject do
             Aino.Token.Response
           ],
           View: [
-            Aino.View
+            Aino.View,
+            Aino.View.Engine,
+            Aino.View.Safe
           ],
           Session: [
             Aino.Session,
