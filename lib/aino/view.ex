@@ -11,8 +11,13 @@ defmodule Aino.View do
   Generates the following render functions:
 
   ```elixir
-  def render("index.html", assigns) do
+  def simple_render("index.html", assigns) do
     # compiled index.html.eex
+  end
+
+  def render(token, "index.html", assigns) do
+    # calls simple_render("index.html", assigns)
+    # assigns to the `response_body` field on `token`
   end
   ```
   """
