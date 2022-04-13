@@ -12,12 +12,12 @@ defmodule Aino.ViewTest do
 
   describe "simple views" do
     test "simple render no assigns" do
-      text = TestView.simple_render("no-variables.html")
+      {:safe, text} = TestView.simple_render("no-variables.html")
       assert text == ["Hello!\n"]
     end
 
     test "simple render only requires assigns" do
-      text = TestView.simple_render("simple.html", %{name: "Kullervo"})
+      {:safe, text} = TestView.simple_render("simple.html", %{name: "Kullervo"})
       assert text == ["Hello, ", "Kullervo", "\n"]
     end
 
@@ -32,6 +32,25 @@ defmodule Aino.ViewTest do
       token = TestView.render(token, "simple.html", %{name: "Kullervo"})
 
       assert token.response_body == ["Hello, ", "Kullervo", "\n"]
+    end
+  end
+
+  describe "values in assigns" do
+    test "atoms" do
+      {:safe, text} = TestView.simple_render("simple.html", %{name: :Kullervo})
+      assert text == ["Hello, ", "Kullervo", "\n"]
+    end
+  end
+
+  describe "escaping HTML" do
+    test "html in assigns is escaped" do
+      {:safe, text} = TestView.simple_render("simple.html", %{name: "<b>Kullervo</b>"})
+      assert text == ["Hello, ", "&lt;b&gt;Kullervo&lt;/b&gt;", "\n"]
+    end
+
+    test "safe values are passed directly through" do
+      {:safe, text} = TestView.simple_render("simple.html", %{name: {:safe, "<b>Kullervo</b>"}})
+      assert text == ["Hello, ", "<b>Kullervo</b>", "\n"]
     end
   end
 end
