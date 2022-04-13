@@ -76,6 +76,7 @@ defmodule Aino.View do
   """
   def render_template(module, token, filename, assigns) do
     default_assigns = %{
+      token: token,
       scheme: token.scheme,
       host: token.host,
       port: token.port
