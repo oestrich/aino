@@ -1,4 +1,10 @@
 defmodule Mix.Tasks.Aino.Server do
+  @moduledoc """
+  Run the Aino Server
+
+  An alias for `mix run --no-halt` that is IEx aware
+  """
+
   use Mix.Task
 
   @shortdoc "Run the Aino server"
