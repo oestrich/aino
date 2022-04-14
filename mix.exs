@@ -65,6 +65,7 @@ defmodule Aino.MixProject do
       maintainers: ["Eric Oestrich"],
       licenses: ["MIT"],
       links: %{
+        "Homepage" => "https://ainoweb.dev",
         "GitHub" => "https://github.com/oestrich/aino"
       }
     }
