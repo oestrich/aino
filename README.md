@@ -19,8 +19,19 @@ defmodule Aino.Application do
   use Application
 
   def start(_type, _args) do
+    # get your config somehow
+
+    aino_config = [
+      callback: Example.Web.Handler,
+      otp_app: :example,
+      host: config.host,
+      port: config.port,
+      environment: config.environment,
+      config: %{}
+    ]
+
     children = [
-      {Aino, [callback: Aino.Handler, port: 3000]}
+      {Aino, aino_config}
     ]
 
     opts = [strategy: :one_for_one, name: Aino.Supervisor]
@@ -74,7 +85,7 @@ end
 
 defmodule Index.View do
   require Aino.View
-  
+
   Aino.View.compile [
     "lib/index/index.html.eex"
   ]
