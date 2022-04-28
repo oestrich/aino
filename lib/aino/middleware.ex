@@ -116,16 +116,28 @@ defmodule Aino.Middleware do
 
   Converts map and stores on the key `:query_params`
 
-      iex> request = %Aino.Request{args: [{"key", "value"}]}
+      iex> request = %Aino.Request{raw_path: "/path?key=value"}
       iex> token = %{request: request}
       iex> token = Middleware.query_params(token)
       iex> token.query_params
       %{"key" => "value"}
+
+      iex> request = %Aino.Request{raw_path: "/path"}
+      iex> token = %{request: request}
+      iex> token = Middleware.query_params(token)
+      iex> token.query_params
+      %{}
   """
   def query_params(%{request: request} = token) do
-    params = Enum.into(request.args, %{})
+    uri = URI.parse(request.raw_path)
 
-    Map.put(token, :query_params, params)
+    case is_nil(uri.query) do
+      true ->
+        Map.put(token, :query_params, %{})
+
+      false ->
+        Map.put(token, :query_params, URI.decode_query(uri.query))
+    end
   end
 
   @doc """
