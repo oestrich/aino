@@ -8,6 +8,7 @@ defmodule Aino.Middleware do
 
   require Logger
 
+  alias Aino.Middleware.Parsers.FormURLEncoded
   alias Aino.Token
 
   @doc """
@@ -156,7 +157,7 @@ defmodule Aino.Middleware do
 
         case content_type do
           "application/x-www-form-urlencoded" ->
-            parse_form_urlencoded(token)
+            FormURLEncoded.parse(token)
 
           "application/json" ->
             parse_json(token)
@@ -165,21 +166,6 @@ defmodule Aino.Middleware do
       _ ->
         token
     end
-  end
-
-  defp parse_form_urlencoded(token) do
-    parsed_body =
-      token.request.body
-      |> String.split("&")
-      |> Enum.map(fn token ->
-        case String.split(token, "=") do
-          [token] -> {token, true}
-          [name, value] -> {name, URI.decode_www_form(value)}
-        end
-      end)
-      |> Enum.into(%{})
-
-    Map.put(token, :parsed_body, parsed_body)
   end
 
   defp parse_json(token) do
@@ -382,5 +368,83 @@ defmodule Aino.Middleware.Development do
   def inspect(token, key) do
     Logger.debug(inspect(token[key]))
     token
+  end
+end
+
+defmodule Aino.Middleware.Parsers do
+  @moduledoc """
+  Behaviour for parsing request bodys
+  """
+
+  @doc """
+  Parse the request body for a token
+  """
+  @callback parse(token :: map()) :: map()
+end
+
+defmodule Aino.Middleware.Parsers.FormURLEncoded do
+  @moduledoc """
+  Parse `application/x-www-form-urlencoded` request bodies
+  """
+
+  @behaviour Aino.Middleware.Parsers
+
+  @impl true
+  def parse(token) do
+    parsed_body =
+      token.request.body
+      |> URI.decode_www_form()
+      |> URI.query_decoder()
+      |> Enum.map(fn {key, value} ->
+        {parse_key(key), value}
+      end)
+      |> Enum.reduce(%{}, fn {key, value}, map ->
+        merge_keys(map, key, value)
+      end)
+
+    Map.put(token, :parsed_body, parsed_body)
+  end
+
+  defp parse_key(key, current \\ "", keys \\ [])
+
+  defp parse_key(<<>>, "", keys) do
+    keys
+  end
+
+  defp parse_key(<<>>, current, keys) do
+    keys ++ [current]
+  end
+
+  defp parse_key(<<"[]", rest::binary>>, current, keys) do
+    parse_key(rest, "", keys ++ [current, :array])
+  end
+
+  defp parse_key(<<"[", rest::binary>>, current, keys) do
+    parse_key(rest, "", keys ++ [current])
+  end
+
+  defp parse_key(<<"]", rest::binary>>, current, keys) do
+    parse_key(rest, "", keys ++ [current])
+  end
+
+  defp parse_key(<<character::binary-size(1), rest::binary>>, current, keys) do
+    parse_key(rest, current <> character, keys)
+  end
+
+  # Deep merge maps and arrays
+  defp merge_keys(_map, [], value), do: value
+
+  defp merge_keys(map, [key], value) do
+    Map.put(map, key, value)
+  end
+
+  defp merge_keys(map, [key, :array | keys], value) do
+    current = Map.get(map, key, [])
+    Map.put(map, key, current ++ [merge_keys(current, keys, value)])
+  end
+
+  defp merge_keys(map, [key | keys], value) do
+    current = Map.get(map, key, %{})
+    Map.put(map, key, merge_keys(current, keys, value))
   end
 end
