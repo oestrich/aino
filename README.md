@@ -49,18 +49,34 @@ Aino ships with a common set of middleware that you can include at the top of pr
 Another built in middleware is a simple routing layer. Import the HTTP methods from `Aino.Middleware.Routes` that you're going to use in your routes. Then each HTTP method function takes the route and a middleware that should be run on the route.
 
 ```elixir
-defmodule Aino.Handler do
-  import Aino.Middleware.Routes, only: [get: 2]
+defmodule MyApp.Handler do
+  import Aino.Middleware.Routes, only: [get: 2, get: 3, post: 2]
 
-  def handle(token) do
-    routes = [
-      get("/", &Index.index/1),
+  @behaviour Aino.Handler
+
+  def routes() do
+    [
+      get("/", &Index.index/1, as: :root),
+      get("/about", &Index.about/1, as: :about),
+      order_routes()
     ]
+  end
 
+  defp order_routes() do
+    [
+      get("/orders", &Orders.index/1, as: :orders),
+      get("/orders/:id", &Orders.show/1, as: :order),
+      post("/orders", &Orders.create/1)
+    ]
+  end
+
+  @impl true
+  def handle(token) do
     middleware = [
       Aino.Middleware.common(),
-      &Aino.Middleware.routes(&1, routes),
+      &Aino.Middleware.routes(&1, routes()),
       &Aino.Middleware.Routes.match_route/1,
+      &Aino.Middleware.params/1,
       &Aino.Middleware.Routes.handle_route/1,
     ]
 
