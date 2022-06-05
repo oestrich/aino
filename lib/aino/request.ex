@@ -12,8 +12,6 @@ end
 defmodule Aino.Elli.Request do
   @moduledoc false
 
-  # Convert an `:elli` request record into a struct that we can work with easily
-
   record = Record.extract(:req, from_lib: "elli/include/elli.hrl")
   keys = :lists.map(&elem(&1, 0), record)
   vals = :lists.map(&{&1, [], nil}, keys)
