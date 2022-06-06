@@ -137,7 +137,12 @@ defmodule Aino.Middleware do
         Map.put(token, :query_params, %{})
 
       false ->
-        Map.put(token, :query_params, URI.decode_query(uri.query))
+        query_params =
+          uri.query
+          |> URI.decode_query()
+          |> Aino.Middleware.Parsers.ParamKeys.parse()
+
+        Map.put(token, :query_params, query_params)
     end
   end
 
@@ -395,14 +400,28 @@ defmodule Aino.Middleware.Parsers.FormURLEncoded do
       token.request.body
       |> URI.decode_www_form()
       |> URI.query_decoder()
-      |> Enum.map(fn {key, value} ->
-        {parse_key(key), value}
-      end)
-      |> Enum.reduce(%{}, fn {key, value}, map ->
-        merge_keys(map, key, value)
-      end)
+      |> Aino.Middleware.Parsers.ParamKeys.parse()
 
     Map.put(token, :parsed_body, parsed_body)
+  end
+end
+
+defmodule Aino.Middleware.Parsers.ParamKeys do
+  @moduledoc """
+  Common code for parsing param maps
+  """
+
+  @doc """
+  Converts a flat map with special keys into a deep map
+  """
+  def parse(params) do
+    params
+    |> Enum.map(fn {key, value} ->
+      {parse_key(key), value}
+    end)
+    |> Enum.reduce(%{}, fn {key, value}, map ->
+      merge_keys(map, key, value)
+    end)
   end
 
   defp parse_key(key, current \\ "", keys \\ [])
