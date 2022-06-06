@@ -21,14 +21,14 @@ defmodule Aino.Application do
   def start(_type, _args) do
     # get your config somehow
 
-    aino_config = [
+    aino_config = %Aino.Config{
       callback: Example.Web.Handler,
       otp_app: :example,
       host: config.host,
       port: config.port,
       environment: config.environment,
       config: %{}
-    ]
+    }
 
     children = [
       {Aino, aino_config}

@@ -20,7 +20,7 @@ defmodule Aino do
     }
 
     children = [
-      {Aino, [config]}
+      {Aino, aino_config}
     ]
   ```
 
@@ -174,7 +174,7 @@ defmodule Aino.Config do
     }
 
     children = [
-      {Aino, [config]}
+      {Aino, aino_config}
     ]
   ```
   """
