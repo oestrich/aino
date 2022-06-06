@@ -10,17 +10,17 @@ defmodule Aino do
   when it's created on each request.
 
   ```elixir
-    aino_config = [
+    aino_config = %Aino.Config{
       callback: Example.Web.Handler,
       otp_app: :example,
       host: config.host,
       port: config.port,
       environment: config.environment,
       config: %{}
-    ]
+    }
 
     children = [
-      {Aino, []}
+      {Aino, [config]}
     ]
   ```
 
@@ -43,11 +43,11 @@ defmodule Aino do
   require Logger
 
   @doc false
-  def child_spec(opts) do
+  def child_spec(options) do
     opts = [
       callback: Aino,
-      callback_args: opts,
-      port: opts[:port]
+      callback_args: options,
+      port: options.port
     ]
 
     %{
@@ -60,7 +60,7 @@ defmodule Aino do
   end
 
   @impl true
-  def init(_request, _args), do: :ignore
+  def init(_request, _options), do: :ignore
 
   @impl true
   def handle(request, options) do
@@ -79,21 +79,27 @@ defmodule Aino do
   end
 
   defp handle_request(request, options) do
-    callback = options[:callback]
+    callback = options.callback
 
     token =
       request
-      |> Aino.Request.from_record()
-      |> Aino.Token.from_request()
-      |> Map.put(:otp_app, options[:otp_app])
-      |> Map.put(:scheme, scheme(options))
-      |> Map.put(:host, options[:host])
-      |> Map.put(:port, options[:port])
-      |> Map.put(:default_assigns, %{})
-      |> Map.put(:environment, options[:environment])
-      |> Map.put(:config, options[:config])
+      |> Aino.Elli.Request.from_record()
+      |> create_token(options)
 
     callback.handle(token)
+  end
+
+  # Create a token from an `Aino.Request`
+  defp create_token(request, options) do
+    request
+    |> Aino.Token.from_request()
+    |> Map.put(:otp_app, options.otp_app)
+    |> Map.put(:scheme, options.scheme)
+    |> Map.put(:host, options.host)
+    |> Map.put(:port, options.port)
+    |> Map.put(:environment, options.environment)
+    |> Map.put(:config, options.config)
+    |> Map.put(:default_assigns, %{})
   end
 
   defp handle_response(%{handover: true}) do
@@ -119,10 +125,8 @@ defmodule Aino do
     end
   end
 
-  defp scheme(options), do: options[:scheme] || :http
-
   @impl true
-  def handle_event(:request_complete, data, _args) do
+  def handle_event(:request_complete, data, _options) do
     {timings, _} = Enum.at(data, 4)
     diff = timings[:request_end] - timings[:request_start]
     microseconds = System.convert_time_unit(diff, :native, :microsecond)
@@ -138,21 +142,53 @@ defmodule Aino do
     :ok
   end
 
-  def handle_event(:request_error, data, _args) do
+  def handle_event(:request_error, data, _options) do
     Logger.error("Internal server error, #{inspect(data)}")
 
     :ok
   end
 
-  def handle_event(:elli_startup, _data, opts) do
-    Logger.info("Aino started on #{scheme(opts)}://#{opts[:host]}:#{opts[:port]}")
+  def handle_event(:elli_startup, _data, options) do
+    Logger.info("Aino started on #{options.scheme}://#{options.host}:#{options.port}")
 
     :ok
   end
 
-  def handle_event(_event, _data, _args) do
+  def handle_event(_event, _data, _options) do
     :ok
   end
+end
+
+defmodule Aino.Config do
+  @moduledoc """
+  Config for `Aino` when launching in a supervision tree
+
+  ```elixir
+    aino_config = %Aino.Config{
+      callback: Example.Web.Handler,
+      otp_app: :example,
+      host: config.host,
+      port: config.port,
+      environment: config.environment,
+      config: %{}
+    }
+
+    children = [
+      {Aino, [config]}
+    ]
+  ```
+  """
+
+  @enforce_keys [:callback, :otp_app, :host, :port]
+  defstruct [
+    :callback,
+    :otp_app,
+    :host,
+    :port,
+    :config,
+    environment: "development",
+    scheme: :http
+  ]
 end
 
 defmodule Aino.Exception do

@@ -228,7 +228,7 @@ defmodule Aino.Middleware.Routes do
   ```elixir
   routes = [
     put("/orders", &Orders.create/1, as: :orders),
-    POST("/orders/:id", [&Orders.authorize/1, &Order.update/1], as: :order)
+    post("/orders/:id", [&Orders.authorize/1, &Order.update/1], as: :order)
   ]
   ```
   """
@@ -284,7 +284,12 @@ defmodule Aino.Middleware.Routes do
   Adds the following keys to the token `[:path_params, :route_middleware]`
   """
   def match_route(token) do
-    case find_route(token.routes, token.method, token.path) do
+    path =
+      token.path
+      |> String.split("/")
+      |> Enum.reject(&match?("", &1))
+
+    case find_route(token.routes, token.method, path) do
       {:ok, %{middleware: middleware}, path_params} ->
         token
         |> Map.put(:path_params, path_params)

@@ -102,11 +102,11 @@ defmodule Aino.Middleware do
   @doc """
   Stores the request path on the token on the key `:path`
 
-      iex> request = %Aino.Request{path: ["orders", "10"]}
+      iex> request = %Aino.Request{path: "/orders/10"}
       iex> token = %{request: request}
       iex> token = Middleware.path(token)
       iex> token.path
-      ["orders", "10"]
+      "/orders/10"
   """
   def path(%{request: request} = token) do
     Map.put(token, :path, request.path)
@@ -117,33 +117,15 @@ defmodule Aino.Middleware do
 
   Converts map and stores on the key `:query_params`
 
-      iex> request = %Aino.Request{raw_path: "/path?key=value"}
+      iex> request = %Aino.Request{query_params: %{"key[]" => "value"}}
       iex> token = %{request: request}
       iex> token = Middleware.query_params(token)
       iex> token.query_params
-      %{"key" => "value"}
-
-      iex> request = %Aino.Request{raw_path: "/path"}
-      iex> token = %{request: request}
-      iex> token = Middleware.query_params(token)
-      iex> token.query_params
-      %{}
+      %{"key" => ["value"]}
   """
   def query_params(%{request: request} = token) do
-    uri = URI.parse(request.raw_path)
-
-    case is_nil(uri.query) do
-      true ->
-        Map.put(token, :query_params, %{})
-
-      false ->
-        query_params =
-          uri.query
-          |> URI.decode_query()
-          |> Aino.Middleware.Parsers.ParamKeys.parse()
-
-        Map.put(token, :query_params, query_params)
-    end
+    query_params = Aino.Middleware.Parsers.ParamKeys.parse(request.query_params)
+    Map.put(token, :query_params, query_params)
   end
 
   @doc """
@@ -285,15 +267,15 @@ defmodule Aino.Middleware do
   """
   def assets(token) do
     case token.path do
-      ["assets" | path] ->
-        path = Path.join(:code.priv_dir(token.otp_app), Enum.join(["static" | path], "/"))
+      "/assets" <> path ->
+        path = Path.join(:code.priv_dir(token.otp_app), "/static" <> path)
 
         case File.exists?(path) do
           true ->
             data = File.read!(path)
 
             method = String.upcase(to_string(token.method))
-            url_path = "/" <> Enum.join(token.path, "/")
+            url_path = token.path
 
             Logger.info("#{method} #{url_path}")
 
@@ -333,7 +315,7 @@ defmodule Aino.Middleware do
 
   def logging(token) do
     method = String.upcase(to_string(token.method))
-    path = "/" <> Enum.join(token.path, "/")
+    path = token.path
 
     case Map.keys(token.params) == [] do
       true ->
