@@ -304,6 +304,9 @@ defmodule Aino.Middleware do
       "production" ->
         "public, max-age=604800"
 
+      "staging" ->
+        "public, max-age=604800"
+
       "development" ->
         "no-cache"
     end
