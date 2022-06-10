@@ -74,7 +74,7 @@ defmodule MyApp.Handler do
   def handle(token) do
     middleware = [
       Aino.Middleware.common(),
-      &Aino.Middleware.routes(&1, routes()),
+      &Aino.Middleware.Routes.routes(&1, routes()),
       &Aino.Middleware.Routes.match_route/1,
       &Aino.Middleware.params/1,
       &Aino.Middleware.Routes.handle_route/1,
