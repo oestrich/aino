@@ -105,6 +105,13 @@ defmodule Aino.Token do
   Takes a list of middleware, that may be either another list of middleware or
   a function that has an arity of 1.
 
+  Optionally you can use a two element tuple, the first element is a middleware
+  function reference, with the second element being a list of options.
+
+  Options available for middleware during runtime are:
+  - `ignore_halt`, default false, if set to true the middleware will always run
+    and not be short circuited by a halted token.
+
   For example
 
   ```elixir
@@ -114,6 +121,7 @@ defmodule Aino.Token do
     &Aino.Middleware.Routes.match_route/1,
     &Aino.Middleware.params/1,
     &Aino.Middleware.Routes.handle_route/1,
+    {&Aino.Middleware.logging/1, ignore_halt: true}
   ]
 
   reduce(token, middleware)
@@ -124,15 +132,26 @@ defmodule Aino.Token do
       middleware, token when is_list(middleware) ->
         reduce(token, middleware)
 
-      middleware, token ->
-        case token do
-          %{halt: true} ->
-            token
+      {middleware, options}, token ->
+        call_middlware(middleware, token, Enum.into(options, %{}))
 
-          _ ->
-            middleware.(token)
-        end
+      middleware, token ->
+        call_middlware(middleware, token, %{})
     end)
+  end
+
+  defp call_middlware(middleware, token, %{ignore_halt: true}) do
+    middleware.(token)
+  end
+
+  defp call_middlware(middleware, token, _options) do
+    case token do
+      %{halt: true} ->
+        token
+
+      _ ->
+        middleware.(token)
+    end
   end
 
   @doc """

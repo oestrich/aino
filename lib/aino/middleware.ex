@@ -316,17 +316,26 @@ defmodule Aino.Middleware do
     MIME.from_path(path)
   end
 
-  def logging(token) do
+  def logging(%{params: params} = token) do
     method = String.upcase(to_string(token.method))
     path = token.path
 
-    case Map.keys(token.params) == [] do
+    case Map.keys(params) == [] do
       true ->
         Logger.info("#{method} #{path}")
 
       false ->
         Logger.info("#{method} #{path}\nParameters: #{inspect(token.params)}")
     end
+
+    token
+  end
+
+  def logging(token) do
+    method = String.upcase(to_string(token.method))
+    path = token.path
+
+    Logger.info("#{method} #{path}")
 
     token
   end
@@ -344,8 +353,6 @@ defmodule Aino.Middleware.Development do
   @doc """
   Recompiles the application
   """
-  def recompile(%{halt: true} = token), do: token
-
   def recompile(token) do
     IEx.Helpers.recompile()
 
