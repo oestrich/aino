@@ -105,6 +105,37 @@ defmodule Aino.SessionTest do
       assert token.session == %{}
     end
   end
+
+  describe "decode/encode - encrypted cookies" do
+    test "success" do
+      token =
+        %{session: %{}}
+        |> Session.config(%Session.EncryptedCookie{key: :crypto.strong_rand_bytes(32)})
+        |> Session.Token.put("name", "aino")
+        |> Session.encode()
+        |> set_cookie_from_header()
+        |> Map.delete(:session)
+        |> Session.decode()
+
+      assert %{"name" => "aino"} = token.session
+      refute inspect(token.cookies) =~ "name"
+    end
+  end
+
+  defp set_cookie_from_header(%{response_headers: headers} = token) do
+    {_, set_cookie} = Enum.find(headers, fn {k, _v} -> k == "Set-Cookie" end)
+    [_ | [cookie | _]] = Regex.run(~r/_aino_session=(.*); HttpOnly/, set_cookie)
+
+    Map.merge(
+      token,
+      %{
+        cookies: %{
+          "_aino_session" => cookie
+        }
+      }
+    )
+    |> Map.delete(:response_headers)
+  end
 end
 
 defmodule Aino.Session.FlashTest do
