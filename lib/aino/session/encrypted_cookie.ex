@@ -107,6 +107,9 @@ defmodule Aino.Session.AES do
       |> Enum.map(&Base.decode64!(&1))
 
     :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, encrypted_data, @aad, tag, false)
+  rescue
+    e ->
+      reraise e, filter_stacktrace(__STACKTRACE__)
   end
 
   defp filter_stacktrace(stacktrace) do

@@ -154,6 +154,21 @@ defmodule Aino.Session.AESTest do
       end
     end
   end
+
+  describe "decrypt" do
+    test "doesn't log encryption key" do
+      key = :crypto.strong_rand_bytes(32)
+      encrypted = AES.encrypt("hello", key)
+
+      try do
+        AES.decrypt(encrypted, "sensitive")
+      rescue
+        e ->
+          assert inspect(e) =~ "Unknown cipher or invalid key size"
+          refute inspect(__STACKTRACE__) =~ "sensitive"
+      end
+    end
+  end
 end
 
 defmodule Aino.Session.FlashTest do
