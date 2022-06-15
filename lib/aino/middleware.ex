@@ -390,8 +390,15 @@ defmodule Aino.Middleware.Parsers.FormURLEncoded do
   def parse(token) do
     parsed_body =
       token.request.body
-      |> URI.decode_www_form()
-      |> URI.query_decoder()
+      |> String.split("&")
+      |> Enum.map(fn param ->
+        [key, value] =
+          param
+          |> URI.decode_www_form()
+          |> String.split("=")
+
+        {key, value}
+      end)
       |> Aino.Middleware.Parsers.ParamKeys.parse()
 
     Map.put(token, :parsed_body, parsed_body)
