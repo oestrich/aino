@@ -76,5 +76,25 @@ defmodule Aino.MiddlewareTest do
                "key" => ["foo", "bar"]
              }
     end
+
+    test "email values with a plus are kept" do
+      token = %{
+        method: :post,
+        headers: [
+          {"content-type", "application/x-www-form-urlencoded"}
+        ],
+        request: %{
+          body: "user[email]=user%2Btest@example.org"
+        }
+      }
+
+      token = Middleware.request_body(token)
+
+      assert token.parsed_body == %{
+               "user" => %{
+                 "email" => "user+test@example.org"
+               }
+             }
+    end
   end
 end
