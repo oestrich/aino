@@ -138,6 +138,24 @@ defmodule Aino.SessionTest do
   end
 end
 
+defmodule Aino.Session.AESTest do
+  use ExUnit.Case, async: true
+
+  alias Aino.Session.AES
+
+  describe "encrypt" do
+    test "doesn't log encryption key" do
+      try do
+        AES.encrypt("data", "sensitive")
+      rescue
+        e ->
+          assert inspect(e) =~ "Unknown cipher or invalid key size"
+          refute inspect(__STACKTRACE__) =~ "sensitive"
+      end
+    end
+  end
+end
+
 defmodule Aino.Session.FlashTest do
   use ExUnit.Case, async: true
 

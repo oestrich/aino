@@ -82,6 +82,9 @@ defmodule Aino.Session.AES do
   @moduledoc """
   Uses AES 256 GCM to encrypt and decrypt session data.
   """
+
+  require Logger
+
   @aad "aino-session-crypto-module"
 
   @doc false
@@ -91,6 +94,9 @@ defmodule Aino.Session.AES do
     [encrypted, iv, tag] = [encrypted, iv, tag] |> Enum.map(&Base.encode64(&1))
 
     "#{encrypted}--#{iv}--#{tag}"
+  rescue
+    e ->
+      reraise e, filter_stacktrace(__STACKTRACE__)
   end
 
   @doc false
@@ -101,5 +107,32 @@ defmodule Aino.Session.AES do
       |> Enum.map(&Base.decode64!(&1))
 
     :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, encrypted_data, @aad, tag, false)
+  end
+
+  defp filter_stacktrace(stacktrace) do
+    Enum.reverse(do_filter_stacktrace(stacktrace, []))
+  end
+
+  defp do_filter_stacktrace([], acc), do: acc
+
+  defp do_filter_stacktrace([item | rest], acc) do
+    new_item =
+      case item do
+        {mod, fun, args, info} when is_list(args) ->
+          filtered_args =
+            args
+            |> Enum.with_index()
+            |> Enum.map(fn
+              {_, 1} -> "filtered"
+              {value, _} -> value
+            end)
+
+          {mod, fun, filtered_args, info}
+
+        _ ->
+          item
+      end
+
+    do_filter_stacktrace(rest, [new_item | acc])
   end
 end
