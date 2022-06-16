@@ -69,12 +69,20 @@ defmodule Aino do
       |> handle_request(options)
       |> handle_response()
     rescue
+      exception in Aino.View.MissingTemplateException ->
+        assigns = %{
+          exception: exception,
+          stacktrace: Exception.format_stacktrace(__STACKTRACE__)
+        }
+
+        {500, [{"Content-Type", "text/html"}], Aino.Exception.render_view_missing(assigns)}
+
       exception ->
         message = Exception.format(:error, exception, __STACKTRACE__)
         Logger.error(message)
         assigns = %{exception: Aino.View.Engine.html_escape(message)}
 
-        {500, [{"Content-Type", "text/html"}], Aino.Exception.render(assigns)}
+        {500, [{"Content-Type", "text/html"}], Aino.Exception.render_generic(assigns)}
     end
   end
 
@@ -197,5 +205,13 @@ defmodule Aino.Exception do
   # Compiles the error page into a function for calling in `Aino`
 
   require EEx
-  EEx.function_from_file(:def, :render, "lib/aino/exception.html.eex", [:assigns])
+
+  EEx.function_from_file(:def, :render_generic, "lib/aino/exceptions/generic.html.eex", [:assigns])
+
+  EEx.function_from_file(
+    :def,
+    :render_view_missing,
+    "lib/aino/exceptions/view-missing.html.eex",
+    [:assigns]
+  )
 end

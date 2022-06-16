@@ -53,6 +53,20 @@ defmodule Aino.ViewTest do
       assert text == ["Hello, ", "<b>Kullervo</b>", "\n"]
     end
   end
+
+  describe "missing template exception" do
+    test "simple_render raises the right exception" do
+      assert_raise Aino.View.MissingTemplateException, fn ->
+        TestView.simple_render("unknown.html")
+      end
+    end
+
+    test "render raises the right exception" do
+      assert_raise Aino.View.MissingTemplateException, fn ->
+        TestView.render(%{}, "unknown.html")
+      end
+    end
+  end
 end
 
 defmodule Aino.View.TagTest do

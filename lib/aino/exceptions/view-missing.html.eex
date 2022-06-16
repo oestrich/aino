@@ -1,0 +1,27 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <title>Aino Exception</title>
+    <link href="https://unpkg.com/tailwindcss@2.2.7/dist/tailwind.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="mx-auto max-w-screen-md mt-4">
+      <h1 class="text-xl m-4 text-center">Internal Server Error</h1>
+
+      <div>
+        <p><code class="bg-blue-50"><%= @exception.module %></code> does not include the template <code class="bg-blue-50">"<%= @exception.template %>"</code>.</p>
+
+        <p class="mt-4">The available templates are:</p>
+
+        <ul class="list-disc list-inside mb-4">
+          <%= Enum.map(@exception.templates, fn template -> %>
+            <li><code class="bg-blue-50"><%= template %></code></li>
+          <% end) %>
+        </ul>
+
+        <pre class="text-red-600"> ** (<%= @exception.__struct__ %>)</pre>
+        <pre class="text-red-600"><%= @stacktrace %></pre>
+      </div>
+    </div>
+  </body>
+</html>

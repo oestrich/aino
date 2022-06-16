@@ -32,11 +32,27 @@ defmodule Aino.View do
       end)
 
     quote do
+      Module.register_attribute(__MODULE__, :templates, accumulate: true)
+
       def simple_render(filename, assigns \\ %{})
 
       def render(token, filename, assigns \\ %{})
 
       unquote(templates)
+
+      def simple_render(filename, assigns) do
+        raise Aino.View.MissingTemplateException,
+          module: __MODULE__,
+          templates: @templates,
+          template: filename
+      end
+
+      def render(_token, filename, assigns) do
+        raise Aino.View.MissingTemplateException,
+          module: __MODULE__,
+          templates: @templates,
+          template: filename
+      end
     end
   end
 
@@ -58,6 +74,8 @@ defmodule Aino.View do
 
     quote bind_quoted: [file: file, filename: filename] do
       require EEx
+
+      @templates file
 
       @file file
       @external_resource file
@@ -262,5 +280,23 @@ defmodule Aino.View.Engine do
           Aino.View.Safe.to_iodata(data)
       end
     end
+  end
+end
+
+defmodule Aino.View.MissingTemplateException do
+  defexception [:module, :templates, :template]
+
+  def message(exception) do
+    templates =
+      Enum.map_join(exception.templates, "\n", fn template ->
+        "- #{template}"
+      end)
+
+    """
+    #{exception.module} does not include the template "#{exception.template}"
+
+    The available templates are:
+    #{templates}
+    """
   end
 end
