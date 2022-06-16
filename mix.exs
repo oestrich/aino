@@ -18,8 +18,11 @@ defmodule Aino.MixProject do
         groups_for_modules: [
           Middleware: [
             Aino.Middleware,
-            Aino.Middleware.Routes,
-            Aino.Middleware.Development
+            Aino.Middleware.Development,
+            Aino.Middleware.Parsers,
+            Aino.Middleware.Parsers.FormURLEncoded,
+            Aino.Middleware.Parsers.ParamKeys,
+            Aino.Middleware.Routes
           ],
           Token: [
             Aino.Token,
@@ -28,13 +31,15 @@ defmodule Aino.MixProject do
           View: [
             Aino.View,
             Aino.View.Engine,
+            Aino.View.Tag,
             Aino.View.Safe
           ],
           Session: [
             Aino.Session,
-            Aino.Session.Token,
+            Aino.Session.Cookie,
+            Aino.Session.Flash,
             Aino.Session.Storage,
-            Aino.Session.Cookie
+            Aino.Session.Token
           ]
         ]
       ]
