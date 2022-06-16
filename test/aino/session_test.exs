@@ -143,30 +143,81 @@ defmodule Aino.Session.AESTest do
 
   alias Aino.Session.AES
 
+  @key :crypto.strong_rand_bytes(32)
+
   describe "encrypt" do
+    test "returns a string with 3 base64 encoded sections" do
+      assert [_, _, _] =
+               "hello" |> AES.encrypt(@key) |> String.split("--") |> Enum.map(&Base.decode64!(&1))
+    end
+
     test "doesn't log encryption key" do
       try do
         AES.encrypt("data", "sensitive")
       rescue
         e ->
-          assert inspect(e) =~ "Unknown cipher or invalid key size"
+          assert inspect(e) =~ "Unknown cipher"
           refute inspect(__STACKTRACE__) =~ "sensitive"
       end
     end
   end
 
   describe "decrypt" do
+    setup do
+      static_key =
+        <<155, 141, 130, 87, 232, 74, 133, 95, 200, 19, 60, 69, 71, 186, 247, 143, 208, 11, 21,
+          136, 124, 109, 102, 99, 247, 138, 26, 46, 36, 222, 251, 216>>
+
+      # unaltered hello encrypted wth the above key
+      unaltered = "qHr2+SU=--WDHw5By4HZD1WJ3VdQd12A==--xzBREp7bRv7+bxA+RjQVQg=="
+
+      [static_key: static_key, unaltered: unaltered]
+    end
+
+    test "works" do
+      assert "hello" |> AES.encrypt(@key) |> AES.decrypt(@key) == "hello"
+
+      str = for(x <- ?0..?z, do: x) |> List.to_string()
+      assert str |> AES.encrypt(@key) |> AES.decrypt(@key) == str
+
+      str = "☺☃♫українська абетка{}"
+      assert str |> AES.encrypt(@key) |> AES.decrypt(@key) == str
+
+      str = Jason.encode!(%{key: :value, foo: "bar"})
+      assert str |> AES.encrypt(@key) |> AES.decrypt(@key) == str
+    end
+
     test "doesn't log encryption key" do
-      key = :crypto.strong_rand_bytes(32)
-      encrypted = AES.encrypt("hello", key)
+      encrypted = AES.encrypt("hello", @key)
 
       try do
         AES.decrypt(encrypted, "sensitive")
       rescue
         e ->
-          assert inspect(e) =~ "Unknown cipher or invalid key size"
+          assert inspect(e) =~ "Unknown cipher"
           refute inspect(__STACKTRACE__) =~ "sensitive"
       end
+    end
+
+    test "returns an error when encrypted data has been altered",
+         context do
+      assert AES.decrypt(context[:unaltered], context[:static_key]) == "hello"
+
+      altered_data = "rHr2+SU=--WDHw5By4HZD1WJ3VdQd12A==--xzBREp7bRv7+bxA+RjQVQg=="
+      assert AES.decrypt(altered_data, context[:static_key]) == :error
+
+      altered_iv = "qHr2+SU=--XDHw5By4HZD1WJ3VdQd12A==--xzBREp7bRv7+bxA+RjQVQg=="
+      assert AES.decrypt(altered_iv, context[:static_key]) == :error
+
+      altered_tag = "qHr2+SU=--WDHw5By4HZD1WJ3VdQd12A==--yzBREp7bRv7+bxA+RjQVQg=="
+      assert AES.decrypt(altered_tag, context[:static_key]) == :error
+
+      altered_non_base64 = ".Hr2+SU=--WDHw5By4HZD1WJ3VdQd12A==--xzBREp7bRv7+bxA+RjQVQg=="
+      assert AES.decrypt(altered_non_base64, context[:static_key]) == :error
+
+      assert AES.decrypt("abca", context[:static_key]) == :error
+
+      assert AES.decrypt("", context[:static_key]) == :error
     end
   end
 end

@@ -101,15 +101,13 @@ defmodule Aino.Session.AES do
 
   @doc false
   def decrypt(blob, key) do
-    [encrypted_data, iv, tag] =
-      blob
-      |> String.split("--")
-      |> Enum.map(&Base.decode64!(&1))
-
-    :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, encrypted_data, @aad, tag, false)
-  rescue
-    e ->
-      reraise e, filter_stacktrace(__STACKTRACE__)
+    with [_, _, _] = encoded <- String.split(blob, "--"),
+         [{:ok, encrypted_data}, {:ok, iv}, {:ok, tag}] <- Enum.map(encoded, &Base.decode64(&1)),
+         {:ok, decrypted_data} <- do_decrypt(key, encrypted_data, iv, tag) do
+      decrypted_data
+    else
+      _ -> :error
+    end
   end
 
   defp filter_stacktrace(stacktrace) do
@@ -137,5 +135,16 @@ defmodule Aino.Session.AES do
       end
 
     do_filter_stacktrace(rest, [new_item | acc])
+  end
+
+  defp do_decrypt(key, encrypted_data, iv, tag) do
+    result = :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, encrypted_data, @aad, tag, false)
+
+    case result do
+      :err -> :err
+      _ -> {:ok, result}
+    end
+  rescue
+    e -> reraise e, filter_stacktrace(__STACKTRACE__)
   end
 end
