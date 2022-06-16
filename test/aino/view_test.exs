@@ -54,3 +54,38 @@ defmodule Aino.ViewTest do
     end
   end
 end
+
+defmodule Aino.View.TagTest do
+  use ExUnit.Case
+
+  alias Aino.View.Tag
+
+  describe "content_tag/3" do
+    test "success: simple tag" do
+      {:safe, tag} =
+        Tag.content_tag :span do
+          "Hello"
+        end
+
+      assert tag == ["<span>", "Hello", "</span>"]
+    end
+
+    test "success: attributes included" do
+      {:safe, tag} =
+        Tag.content_tag :span, class: "color-blue" do
+          "Hello"
+        end
+
+      assert tag == [~s[<span class="color-blue">], "Hello", "</span>"]
+    end
+
+    test "success: is safe by escaping HTML" do
+      {:safe, tag} =
+        Tag.content_tag :span do
+          "<a>Hello</a>"
+        end
+
+      assert tag == [~s[<span>], "&lt;a&gt;Hello&lt;/a&gt;", "</span>"]
+    end
+  end
+end

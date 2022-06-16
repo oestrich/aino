@@ -101,6 +101,41 @@ defmodule Aino.View do
   def safe(value), do: {:safe, value}
 end
 
+defmodule Aino.View.Tag do
+  @moduledoc """
+  Helper functions for dealing with HTML tags
+  """
+
+  @tags [
+    :div,
+    :span
+  ]
+
+  @doc """
+  Create a new element with attributes and inner content
+  """
+  def content_tag(tag, attributes \\ [], do: block) when tag in @tags do
+    attributes =
+      Enum.map(attributes, fn {key, value} ->
+        ~s[#{key}="#{value}"]
+      end)
+
+    attributes = Enum.join(attributes, " ")
+
+    start_tag =
+      [tag, attributes]
+      |> Enum.reject(&match?("", &1))
+      |> Enum.join(" ")
+
+    {:safe,
+     [
+       ~s[<#{start_tag}>],
+       Aino.View.Safe.to_iodata(block),
+       ~s[</#{tag}>]
+     ]}
+  end
+end
+
 defprotocol Aino.View.Safe do
   @moduledoc """
   Initial protocol based off of `Phoenix.HTML.Safe`
