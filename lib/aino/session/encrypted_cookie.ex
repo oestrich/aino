@@ -20,8 +20,10 @@ defmodule Aino.Session.EncryptedCookie do
   def decode(config, token) do
     case token.cookies["_aino_session"] do
       encrypted when is_binary(encrypted) ->
-        data = AES.decrypt(encrypted, config.key)
-        parse_session(token, data)
+        case AES.decrypt(encrypted, config.key) do
+          :error -> Map.put(token, :session, %{})
+          data -> parse_session(token, data)
+        end
 
       _ ->
         Map.put(token, :session, %{})
