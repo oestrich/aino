@@ -37,6 +37,7 @@ defmodule Aino.MixProject do
           Session: [
             Aino.Session,
             Aino.Session.Cookie,
+            Aino.Session.EncryptedCookie,
             Aino.Session.Flash,
             Aino.Session.Storage,
             Aino.Session.Token
