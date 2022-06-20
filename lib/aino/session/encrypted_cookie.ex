@@ -81,9 +81,9 @@ defmodule Aino.Session.EncryptedCookie do
 end
 
 defmodule Aino.Session.AES do
-  @moduledoc """
-  Uses AES 256 GCM to encrypt and decrypt session data.
-  """
+  @moduledoc false
+
+  # Uses AES 256 GCM to encrypt and decrypt session data.
 
   require Logger
 
@@ -93,9 +93,8 @@ defmodule Aino.Session.AES do
   def encrypt(data, key) do
     iv = :crypto.strong_rand_bytes(16)
     {encrypted, tag} = :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, data, @aad, true)
-    [encrypted, iv, tag] = [encrypted, iv, tag] |> Enum.map(&Base.encode64(&1))
 
-    "#{encrypted}--#{iv}--#{tag}"
+    Enum.map_join([encrypted, iv, tag], ".", &Base.encode64(&1, padding: false))
   rescue
     e ->
       reraise e, filter_stacktrace(__STACKTRACE__)
@@ -103,8 +102,9 @@ defmodule Aino.Session.AES do
 
   @doc false
   def decrypt(blob, key) do
-    with [_, _, _] = encoded <- String.split(blob, "--"),
-         [{:ok, encrypted_data}, {:ok, iv}, {:ok, tag}] <- Enum.map(encoded, &Base.decode64(&1)),
+    with [_, _, _] = encoded <- String.split(blob, "."),
+         [{:ok, encrypted_data}, {:ok, iv}, {:ok, tag}] <-
+           Enum.map(encoded, &Base.decode64(&1, padding: false)),
          {:ok, decrypted_data} <- do_decrypt(key, encrypted_data, iv, tag) do
       decrypted_data
     else
@@ -143,7 +143,7 @@ defmodule Aino.Session.AES do
     result = :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, encrypted_data, @aad, tag, false)
 
     case result do
-      :err -> :err
+      :err -> :error
       _ -> {:ok, result}
     end
   rescue
