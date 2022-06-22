@@ -7,11 +7,16 @@ defmodule Aino.Middleware.CSRF do
   the token value from the user session.
   """
 
+  alias Aino.Token
+
   @doc """
   Set the csrf_token unless it already exists. Must be ran after `Aino.Middleware.decode/1`.
   """
   def set(token) do
-    Map.put_new_lazy(token.session, :csrf_token, fn -> :crypto.strong_rand_bytes(32) end)
+    session =
+      Map.put_new_lazy(token.session, "csrf_token", fn -> :crypto.strong_rand_bytes(32) end)
+
+    Map.put(token, :session, session)
   end
 
   @doc """
@@ -19,25 +24,25 @@ defmodule Aino.Middleware.CSRF do
   Must be ran after `Aino.Middleware.decode/1` and `Aino.Middleware.request_body/1`
   """
   def check(%{parsed_body: %{"csrf_token" => actual_csrf_token}} = token) do
-    expected_csrf_token = Map.get(token.session, :csrf_token)
+    expected_csrf_token = Map.get(token.session, "csrf_token")
 
-    cond do
-      expected_csrf_token != actual_csrf_token ->
-        token
-
-      expected_csrf_token == nil ->
-        # TODO raise error
-        Map.put(token, :session, %{})
-
-      expected_csrf_token != actual_csrf_token ->
-        # TODO raise error
-        Map.put(token, :session, %{})
+    if expected_csrf_token == actual_csrf_token do
+      token
+    else
+      token
+      |> Map.put(:halt, true)
+      |> Token.response_status(403)
+      |> Token.response_header("Content-Type", "text/plain")
+      |> Token.response_body("CSRF token doesn't match")
     end
   end
 
   def check(%{parsed_body: _} = token) do
-    # TODO raise error
-    Map.put(token, :session, %{})
+    token
+    |> Map.put(:halt, true)
+    |> Token.response_status(403)
+    |> Token.response_header("Content-Type", "text/plain")
+    |> Token.response_body("CSRF token doesn't match")
   end
 
   def check(token) do
