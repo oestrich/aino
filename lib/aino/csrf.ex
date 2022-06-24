@@ -14,7 +14,7 @@ defmodule Aino.Middleware.CSRF do
   """
   def set(token) do
     session =
-      Map.put_new_lazy(token.session, "csrf_token", fn -> :crypto.strong_rand_bytes(32) end)
+      Map.put_new_lazy(token.session, "csrf_token", fn -> :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false) end)
 
     Map.put(token, :session, session)
   end
@@ -23,37 +23,25 @@ defmodule Aino.Middleware.CSRF do
   Check that the `crsf_token` parameter matches the crsf_token value in the user session.
   Must be ran after `Aino.Middleware.decode/1` and `Aino.Middleware.request_body/1`
   """
-  def check(%{parsed_body: %{"csrf_token" => actual_csrf_token}} = token) do
-    expected_csrf_token = Map.get(token.session, "csrf_token")
-
-    if expected_csrf_token == actual_csrf_token do
+  def check(token) do
+    with session_token when not is_nil(session_token) <- get_in(token, [:session, "csrf_token"]),
+         param_token when not is_nil(param_token) <- get_in(token, [:parsed_body, "csrf_token"]),
+         true <- param_token == session_token do
       token
     else
-      token
-      |> Map.put(:halt, true)
-      |> Token.response_status(403)
-      |> Token.response_header("Content-Type", "text/plain")
-      |> Token.response_body("CSRF token doesn't match")
+      _ ->
+        token
+        |> Map.put(:halt, true)
+        |> Token.response_status(403)
+        |> Token.response_header("Content-Type", "text/plain")
+        |> Token.response_body("CSRF token doesn't match")
     end
-  end
-
-  def check(%{parsed_body: _} = token) do
-    token
-    |> Map.put(:halt, true)
-    |> Token.response_status(403)
-    |> Token.response_header("Content-Type", "text/plain")
-    |> Token.response_body("CSRF token doesn't match")
-  end
-
-  def check(token) do
-    # TODO raise error
-    Map.put(token, :session, %{})
   end
 
   @doc """
   Returns the csrf_token from the session. Used to set the csrf_token param value.
   """
-  def get_token(%{session: %{csrf_token: csrf_token}}) do
+  def get_token(%{session: %{"csrf_token" => csrf_token}}) do
     csrf_token
   end
 

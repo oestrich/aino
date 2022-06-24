@@ -2,6 +2,18 @@ defmodule Aino.CSRFTest do
   use ExUnit.Case, async: true
 
   alias Aino.Middleware.CSRF
+  alias Aino.Middleware
+
+  @valid_token %{
+    session: %{"csrf_token" => "xyz", "key" => "value"},
+    method: :post,
+    headers: [
+      {"content-type", "application/x-www-form-urlencoded"}
+    ],
+    request: %{
+      body: "csrf_token=xyz"
+    }
+  }
 
   defmodule TestView do
     require Aino.View
@@ -29,82 +41,101 @@ defmodule Aino.CSRFTest do
 
   describe "integration" do
     test "it works" do
+      token =
+        @valid_token
+        |> put_in([:session], %{})
+        |> CSRF.set()
+
+      csrf_token = CSRF.get_token(token)
+
+      token =
+        token
+        |> put_in([:request, :body], "csrf_token=#{csrf_token}")
+        |> Middleware.request_body()
+        |> CSRF.check()
+
+      refute token[:halt]
+      refute token[:response_status] == 403
     end
   end
 
   describe "set" do
-    test "with no csrf_token set" do
+    test "success--with no csrf_token set" do
       token = %{session: %{}}
 
-      assert %{session: %{"csrf_token" => _csrf_token}} = CSRF.set(token)
-      # TODO assert length
+      assert %{session: %{"csrf_token" => csrf_token}} = CSRF.set(token)
+      assert byte_size(csrf_token) == 43
     end
 
-    test "with csrf_token set" do
+    test "success--with csrf_token set" do
       token = %{session: %{"csrf_token" => "xyz"}}
 
       assert %{session: %{"csrf_token" => "xyz"}} = CSRF.set(token)
     end
-
-    # TODO various failures
   end
 
   describe "check" do
     test "success" do
       token =
-        valid_token()
-        |> Aino.Middleware.request_body()
+        @valid_token
+        |> Middleware.request_body()
         |> CSRF.check()
 
-      refute Map.has_key?(token, :halt)
+      refute token[:halt]
+      refute token[:response_status] == 403
     end
 
     test "failure--no token in session" do
       token =
-        valid_token()
+        @valid_token
         |> put_in([:session, "csrf_token"], nil)
-        |> Aino.Middleware.request_body()
+        |> Middleware.request_body()
         |> CSRF.check()
 
-      assert token.halt == true
+      assert token.halt
       assert token.response_status == 403
     end
 
     test "failure--no token in body" do
       token =
-        valid_token()
+        @valid_token
         |> put_in([:request, :body], "foo=bar")
-        |> Aino.Middleware.request_body()
+        |> Middleware.request_body()
         |> CSRF.check()
 
-      assert token.halt == true
+      assert token.halt
       assert token.response_status == 403
     end
 
     test "failure--tokens don't match" do
       token =
-        valid_token()
+        @valid_token
         |> put_in([:request, :body], "csrf_token=abc")
-        |> Aino.Middleware.request_body()
+        |> Middleware.request_body()
         |> CSRF.check()
 
-      assert token.halt == true
+      assert token.halt
       assert token.response_status == 403
     end
 
-    # TODO various failures
-  end
+    test "failure--no session" do
+      token =
+        @valid_token
+        |> Map.delete(:session)
+        |> Middleware.request_body()
+        |> CSRF.check()
 
-  defp valid_token do
-    %{
-      session: %{"csrf_token" => "xyz", "key" => "value"},
-      method: :post,
-      headers: [
-        {"content-type", "application/x-www-form-urlencoded"}
-      ],
-      request: %{
-        body: "csrf_token=xyz"
-      }
-    }
+      assert token.halt
+      assert token.response_status == 403
+    end
+
+    test "failure--no parsed_body" do
+      token =
+        @valid_token
+        |> CSRF.check()
+
+      assert token.halt
+      assert token.response_status == 403
+    end
   end
 end
