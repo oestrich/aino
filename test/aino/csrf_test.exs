@@ -28,7 +28,6 @@ defmodule Aino.CSRFTest do
   end
 
   describe "view helper function" do
-    # TODO pass @token maybe
     test "it works" do
       token = TestView.render(@valid_token, "csrf.html", %{})
 
@@ -127,12 +126,32 @@ defmodule Aino.CSRFTest do
     end
 
     test "failure--no parsed_body" do
-      token =
-        @valid_token
-        |> CSRF.check()
+      token = CSRF.check(@valid_token)
 
       assert token.halt
       assert token.response_status == 403
+    end
+  end
+
+  describe "get_token" do
+    test "success" do
+      assert CSRF.get_token(@valid_token) == "xyz"
+    end
+
+    test "failure--token is nil" do
+      token = put_in(@valid_token, [:session, "csrf_token"], nil)
+
+      assert_raise(RuntimeError, fn ->
+        CSRF.get_token(token)
+      end)
+    end
+
+    test "failure--session is nil" do
+      token = Map.delete(@valid_token, :session)
+
+      assert_raise(RuntimeError, fn ->
+        CSRF.get_token(token)
+      end)
     end
   end
 end

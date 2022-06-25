@@ -14,7 +14,9 @@ defmodule Aino.Middleware.CSRF do
   """
   def set(token) do
     session =
-      Map.put_new_lazy(token.session, "csrf_token", fn -> :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false) end)
+      Map.put_new_lazy(token.session, "csrf_token", fn ->
+        :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+      end)
 
     Map.put(token, :session, session)
   end
@@ -41,12 +43,11 @@ defmodule Aino.Middleware.CSRF do
   @doc """
   Returns the csrf_token from the session. Used to set the csrf_token param value.
   """
-  def get_token(%{session: %{"csrf_token" => csrf_token}}) do
+  def get_token(%{session: %{"csrf_token" => csrf_token}}) when not is_nil(csrf_token) do
     csrf_token
   end
 
   def get_token(_) do
-    # TODO raise error
-    nil
+    raise "CSRF Token not found in session"
   end
 end
