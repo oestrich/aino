@@ -71,9 +71,21 @@ defmodule Aino.CSRFTest do
   end
 
   describe "check" do
-    test "success" do
+    test "success--post request" do
       token =
         @valid_token
+        |> Middleware.request_body()
+        |> CSRF.check()
+
+      refute token[:halt]
+      refute token[:response_status] == 403
+    end
+
+    test "success--doesn't check get requests" do
+      token =
+        @valid_token
+        |> Map.put(:method, :get)
+        |> put_in([:request, :body], nil)
         |> Middleware.request_body()
         |> CSRF.check()
 

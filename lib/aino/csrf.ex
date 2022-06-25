@@ -23,8 +23,13 @@ defmodule Aino.Middleware.CSRF do
 
   @doc """
   Check that the `crsf_token` parameter matches the crsf_token value in the user session.
-  Must be ran after `Aino.Middleware.decode/1` and `Aino.Middleware.request_body/1`
+  Must be ran after `Aino.Middleware.decode/1`, `Aino.Middleware.request_body/1`,
+  and `Aino.Middleware.method/1`.
   """
+  def check(%{method: :get} = token) do
+    token
+  end
+
   def check(token) do
     with session_token when not is_nil(session_token) <- get_in(token, [:session, "csrf_token"]),
          param_token when not is_nil(param_token) <- get_in(token, [:parsed_body, "csrf_token"]),
