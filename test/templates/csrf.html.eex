@@ -1,1 +1,1 @@
-A token<%= #TODO helper tag %>
+Token<%= Aino.Middleware.CSRF.get_token(@token) %>

@@ -12,7 +12,11 @@ defmodule Aino.CSRFTest do
     ],
     request: %{
       body: "csrf_token=xyz"
-    }
+    },
+    scheme: "http",
+    host: "example.org",
+    port: "80",
+    default_assigns: %{}
   }
 
   defmodule TestView do
@@ -25,17 +29,10 @@ defmodule Aino.CSRFTest do
 
   describe "view helper function" do
     # TODO pass @token maybe
-    test "full render requires a token" do
-      #   token = %{
-      #     scheme: "http",
-      #     host: "example.org",
-      #     port: "80",
-      #     default_assigns: %{}
-      #   }
+    test "it works" do
+      token = TestView.render(@valid_token, "csrf.html", %{})
 
-      #   token = TestView.render(token, "simple.html", %{name: "Kullervo"})
-
-      #   assert token.response_body == ["Hello, ", "Kullervo", "\n"]
+      assert token.response_body == ["Token", "xyz", "\n"]
     end
   end
 
