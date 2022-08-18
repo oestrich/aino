@@ -13,8 +13,11 @@ defmodule Aino do
     aino_config = %Aino.Config{
       callback: Example.Web.Handler,
       otp_app: :example,
+      scheme: config.scheme,
       host: config.host,
       port: config.port,
+      url_port: config.url_port,
+      url_scheme: config.url_scheme,
       environment: config.environment,
       config: %{}
     }
@@ -102,9 +105,9 @@ defmodule Aino do
     request
     |> Aino.Token.from_request()
     |> Map.put(:otp_app, options.otp_app)
-    |> Map.put(:scheme, options.scheme)
+    |> Map.put(:scheme, options.url_scheme)
     |> Map.put(:host, options.host)
-    |> Map.put(:port, options.port)
+    |> Map.put(:port, options.url_port)
     |> Map.put(:environment, options.environment)
     |> Map.put(:config, options.config)
     |> Map.put(:default_assigns, %{})
@@ -175,8 +178,11 @@ defmodule Aino.Config do
     aino_config = %Aino.Config{
       callback: Example.Web.Handler,
       otp_app: :example,
+      scheme: config.scheme,
       host: config.host,
       port: config.port,
+      url_port: config.url_port,
+      url_scheme: config.url_scheme,
       environment: config.environment,
       config: %{}
     }
@@ -187,15 +193,17 @@ defmodule Aino.Config do
   ```
   """
 
-  @enforce_keys [:callback, :otp_app, :host, :port]
+  @enforce_keys [:callback, :otp_app, :host, :port, :url_port]
   defstruct [
     :callback,
     :otp_app,
     :host,
     :port,
     :config,
+    :url_port,
     environment: "development",
-    scheme: :http
+    scheme: :http,
+    url_scheme: :http
   ]
 end
 
