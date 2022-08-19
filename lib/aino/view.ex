@@ -173,6 +173,10 @@ defimpl Aino.View.Safe, for: Atom do
   def to_iodata(atom), do: to_string(atom)
 end
 
+defimpl Aino.View.Safe, for: Integer do
+  def to_iodata(integer), do: to_string(integer)
+end
+
 defimpl Aino.View.Safe, for: BitString do
   def to_iodata(string) do
     Aino.View.Engine.html_escape(string)
