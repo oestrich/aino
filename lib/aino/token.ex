@@ -203,6 +203,17 @@ defmodule Aino.Token do
       value
     end)
   end
+
+  @doc """
+  Add a key/value pair to the `assigns` map on a token
+
+      iex> token = %{assigns: %{}}
+      iex> Token.assign(token, :name, "User")
+      %{assigns: %{name: "User"}}
+  """
+  def assign(token, key, value) do
+    put_in(token, [:assigns, key], value)
+  end
 end
 
 defmodule Aino.Token.Response do

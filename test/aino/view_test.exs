@@ -26,7 +26,7 @@ defmodule Aino.ViewTest do
         scheme: "http",
         host: "example.org",
         port: "80",
-        default_assigns: %{}
+        assigns: %{}
       }
 
       token = TestView.render(token, "simple.html", %{name: "Kullervo"})

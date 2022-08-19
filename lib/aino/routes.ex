@@ -261,16 +261,7 @@ defmodule Aino.Middleware.Routes do
   Adds the following keys to the token `[:routes]`
   """
   def routes(token, routes) do
-    default_assigns =
-      Map.merge(token.default_assigns, %{
-        routes: %{
-          root_path: fn -> "/" end
-        }
-      })
-
-    token
-    |> Map.put(:routes, routes)
-    |> Map.put(:default_assigns, default_assigns)
+    Map.put(token, :routes, routes)
   end
 
   @doc """

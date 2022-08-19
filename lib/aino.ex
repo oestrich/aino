@@ -110,7 +110,7 @@ defmodule Aino do
     |> Map.put(:port, options.url_port)
     |> Map.put(:environment, options.environment)
     |> Map.put(:config, options.config)
-    |> Map.put(:default_assigns, %{})
+    |> Map.put(:assigns, %{})
   end
 
   defp handle_response(%{handover: true}) do

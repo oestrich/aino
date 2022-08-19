@@ -105,8 +105,10 @@ defmodule Aino.View do
       port: token.port
     }
 
-    default_assigns = Map.merge(default_assigns, token.default_assigns)
-    assigns = Map.merge(default_assigns, assigns)
+    assigns =
+      default_assigns
+      |> Map.merge(token.assigns)
+      |> Map.merge(assigns)
 
     {:safe, response} = module.simple_render(filename, assigns)
 
