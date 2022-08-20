@@ -18,10 +18,10 @@ defmodule Mix.Tasks.Aino.Assets do
         otp_app = String.to_atom(otp_app)
         Aino.Assets.generate_manifest(otp_app)
 
-        IO.puts "Manifest generated"
+        IO.puts("Manifest generated")
 
       false ->
-        IO.puts "You must include the OTP app to generate a manifest file"
+        IO.puts("You must include the OTP app to generate a manifest file")
     end
   end
 end
