@@ -267,8 +267,9 @@ defmodule Aino.Middleware do
   """
   def assets(token) do
     case token.path do
-      "/assets" <> path ->
-        path = Path.join(:code.priv_dir(token.otp_app), "/static" <> path)
+      "/assets/" <> path ->
+        path = Aino.Assets.file_from_asset(path)
+        path = Path.join(:code.priv_dir(token.otp_app), "/static/" <> path)
 
         case File.exists?(path) do
           true ->

@@ -31,7 +31,7 @@ defmodule Aino.Application do
     }
 
     children = [
-      {Aino, aino_config}
+      {Aino.Supervisor, aino_config}
     ]
 
     opts = [strategy: :one_for_one, name: Aino.Supervisor]
