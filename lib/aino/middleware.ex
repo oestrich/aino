@@ -278,8 +278,6 @@ defmodule Aino.Middleware do
             method = String.upcase(to_string(token.method))
             url_path = token.path
 
-            Logger.info("#{method} #{url_path}")
-
             token
             |> Map.put(:halt, true)
             |> Token.response_status(200)
