@@ -102,18 +102,27 @@ defmodule Aino.Middleware.Routes do
 
   @doc false
   def compile_path(path, params) do
+    path_keys = Enum.filter(path, &is_atom/1)
+
+    {path_params, query_params} =
+      Enum.split_with(params, fn {key, _value} ->
+        key in path_keys
+      end)
+
     path =
       Enum.map_join(path, "/", fn part ->
         case is_atom(part) do
           true ->
-            params[part]
+            path_params[part]
 
           false ->
             part
         end
       end)
 
-    "/" <> path
+    uri = URI.parse("/" <> path)
+    query = URI.encode_query(query_params)
+    URI.to_string(%{uri | query: query})
   end
 
   @doc """
