@@ -121,8 +121,15 @@ defmodule Aino.Middleware.Routes do
       end)
 
     uri = URI.parse("/" <> path)
-    query = URI.encode_query(query_params)
-    URI.to_string(%{uri | query: query})
+
+    case Enum.empty?(query_params) do
+      true ->
+        URI.to_string(uri)
+
+      false ->
+        query = URI.encode_query(query_params)
+        URI.to_string(%{uri | query: query})
+    end
   end
 
   @doc """
