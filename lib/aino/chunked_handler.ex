@@ -88,11 +88,11 @@ defmodule Aino.ChunkedHandler.Server do
   def handle_info(message, token) do
     case token.handler.handle(message, token) do
       {:ok, %Aino.Event{} = response, token} ->
-        send(token.request.pid, {:chunk, to_string(response)})
+        send(token.request.private.pid, {:chunk, to_string(response)})
         {:noreply, token}
 
       {:ok, response, token} ->
-        send(token.request.pid, {:chunk, response})
+        send(token.request.private.pid, {:chunk, response})
         {:noreply, token}
 
       {:ok, token} ->
