@@ -2,7 +2,7 @@
 # at the moment we need a specific SHA to be able to use m1 chromedriver
 {
   lib ? import <lib> {},
-  pkgs ? import (fetchTarball https://github.com/NixOS/nixpkgs/archive/724ef1fadf1c263fb7c03940c8827dc76a7fbf34.zip) {}
+  pkgs ? import (fetchTarball https://github.com/NixOS/nixpkgs/archive/4106c7519bff1d14fa5f942da645b3f18d16309e.zip) {}
 }:
 
 let
@@ -20,8 +20,8 @@ let
     pkgs.curl
     pkgs.git
 
-    pkgs.erlangR24
-    pkgs.beam.packages.erlangR24.elixir_1_13
+    pkgs.erlangR25
+    pkgs.beam.packages.erlangR25.elixir_1_14
   ];
 
   inputs = basePackages
