@@ -21,8 +21,11 @@ defmodule Aino.Session.EncryptedCookie do
     case token.cookies["_aino_session"] do
       encrypted when is_binary(encrypted) ->
         case AES.decrypt(encrypted, config.key) do
-          :error -> Map.put(token, :session, %{})
-          data -> parse_session(token, data)
+          :error ->
+            Map.put(token, :session, %{})
+
+          data ->
+            parse_session(token, data)
         end
 
       _ ->
@@ -41,7 +44,9 @@ defmodule Aino.Session.EncryptedCookie do
   end
 
   @doc """
-  Response will be returned with one new `Set-Cookie` headers with the session data as a JSON encoded, encrypted, base64 encoded string
+  Response will be returned with one new `Set-Cookie` headers
+  with the session data as a JSON encoded, encrypted, base64
+  encoded string
   """
   def encode(config, token) do
     case is_map(token.session) do
@@ -92,6 +97,7 @@ defmodule Aino.Session.AES do
   @doc false
   def encrypt(data, key) do
     iv = :crypto.strong_rand_bytes(16)
+
     {encrypted, tag} = :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, data, @aad, true)
 
     Enum.map_join([encrypted, iv, tag], ".", &Base.encode64(&1, padding: false))
@@ -140,13 +146,15 @@ defmodule Aino.Session.AES do
   end
 
   defp do_decrypt(key, encrypted_data, iv, tag) do
-    result = :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, encrypted_data, @aad, tag, false)
+    case :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, encrypted_data, @aad, tag, false) do
+      :err ->
+        :error
 
-    case result do
-      :err -> :error
-      _ -> {:ok, result}
+      result ->
+        {:ok, result}
     end
   rescue
-    e -> reraise e, filter_stacktrace(__STACKTRACE__)
+    e ->
+      reraise e, filter_stacktrace(__STACKTRACE__)
   end
 end

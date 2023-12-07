@@ -393,8 +393,8 @@ defmodule Aino.Middleware.Parsers.FormURLEncoded do
       |> Enum.map(fn param ->
         [key, value] =
           param
-          |> URI.decode_www_form()
           |> String.split("=")
+          |> Enum.map(&URI.decode_www_form/1)
 
         {key, value}
       end)
