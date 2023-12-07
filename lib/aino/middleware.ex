@@ -148,6 +148,9 @@ defmodule Aino.Middleware do
 
           "application/json" ->
             parse_json(token)
+
+          _ ->
+            token
         end
 
       _ ->
