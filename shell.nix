@@ -11,7 +11,6 @@ let
   basePackages = [
     pkgs.gnumake
     pkgs.gcc
-    pkgs.libcap
     pkgs.readline
     pkgs.zlib
     pkgs.libxml2
